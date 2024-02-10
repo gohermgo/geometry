@@ -32,3 +32,14 @@ impl Dot<&Vector> for &Vector {
         (self.0 .0 * rhs.0 .0).reduce_sum()
     }
 }
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::Pointlike;
+    #[test]
+    fn two_vectors() {
+        let a = Vector::new(1.0, 2.0, 3.0);
+        let b = Vector::new(2.0, 3.0, 4.0);
+        assert!(a.dot(b) == 20.0);
+    }
+}

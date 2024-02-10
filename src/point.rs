@@ -1,16 +1,16 @@
-use crate::{Pointlike, Tuple, Vector};
+use crate::{Tuple, Vector};
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 pub struct Point(pub(crate) Tuple);
-impl Pointlike for Point {
-    #[inline]
-    fn new(x: f32, y: f32, z: f32) -> Self {
-        Self(Tuple::new(x, y, z, 1.0_f32))
-    }
-    #[inline]
-    fn is_vector(&self) -> bool {
-        false
-    }
-}
+// impl Pointlike for Point {
+//     #[inline]
+//     fn new(x: f32, y: f32, z: f32) -> Self {
+//         Self(Tuple::new(x, y, z, 1.0_f32))
+//     }
+//     #[inline]
+//     fn is_vector(&self) -> bool {
+//         false
+//     }
+// }
 impl Add<Vector> for Point {
     type Output = Point;
     #[inline]
@@ -34,6 +34,18 @@ impl Add<&Vector> for Point {
 impl AddAssign<&Vector> for Point {
     #[inline]
     fn add_assign(&mut self, rhs: &Vector) {
+        self.0 .0.add_assign(rhs.0 .0)
+    }
+}
+impl AddAssign<&mut Vector> for Point {
+    #[inline]
+    fn add_assign(&mut self, rhs: &mut Vector) {
+        self.0 .0.add_assign(rhs.0 .0)
+    }
+}
+impl AddAssign<&&mut Vector> for Point {
+    #[inline]
+    fn add_assign(&mut self, rhs: &&mut Vector) {
         self.0 .0.add_assign(rhs.0 .0)
     }
 }
@@ -151,7 +163,7 @@ impl PartialEq<Tuple> for Point {
 }
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use crate::{Point, Pointlike, Tuple, Vector};
 
     #[test]
     fn point_constructor_w_eq_one() {
@@ -167,17 +179,20 @@ mod tests {
         assert!(!a.is_vector());
     }
 
-    #[test]
-    fn sub_two_points() {
-        let p1 = point!(3.0, 2.0, 1.0);
-        let p2 = point!(5.0, 6.0, 7.0);
-        assert!((p1 - p2) == vector!(-2.0, -4.0, -6.0))
-    }
+    mod sub {
+        use super::*;
+        #[test]
+        fn two_points() {
+            let p1 = point!(3.0, 2.0, 1.0);
+            let p2 = point!(5.0, 6.0, 7.0);
+            assert!((p1 - p2) == vector!(-2.0, -4.0, -6.0))
+        }
 
-    #[test]
-    fn sub_vector_from_point() {
-        let p = point!(3.0, 2.0, 1.0);
-        let v = vector!(5.0, 6.0, 7.0);
-        assert!((p - v) == point!(-2.0, -4.0, -6.0))
+        #[test]
+        fn vector_from_point() {
+            let p = point!(3.0, 2.0, 1.0);
+            let v = vector!(5.0, 6.0, 7.0);
+            assert!((p - v) == point!(-2.0, -4.0, -6.0))
+        }
     }
 }

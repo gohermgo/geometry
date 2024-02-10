@@ -1,4 +1,5 @@
-use crate::{Point, SortaEq, Vector};
+use crate::{Point, Vector};
+use cmp::SortaEq;
 use std::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
     simd::{f32x4, Simd},
