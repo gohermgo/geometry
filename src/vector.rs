@@ -1,18 +1,15 @@
 //! Vector type
-use crate::{
-    ops::{Mag, Norm, NormAssign},
-    Pointlike, Tuple,
-};
+use crate::Vert4;
 use std::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, Sub, SubAssign},
-    simd::{f32x4, num::SimdFloat},
+    simd::f32x4,
 };
-pub struct Vector(pub(crate) Tuple);
+pub struct Vector(pub(crate) Vert4);
 impl Vector {
-    pub const ZERO: Self = Self(Tuple::ZERO);
-    pub const X: Self = Self(Tuple::X);
-    pub const Y: Self = Self(Tuple::Y);
-    pub const Z: Self = Self(Tuple::Z);
+    pub const ZERO: Self = Self(Vert4::ZERO);
+    pub const X: Self = Self(Vert4::X);
+    pub const Y: Self = Self(Vert4::Y);
+    pub const Z: Self = Self(Vert4::Z);
     // #[inline]
     // pub fn magnitude(&self) -> f32 {
     //     self.0 .0.mul(self.0 .0).reduce_sum().sqrt()
@@ -112,6 +109,13 @@ impl SubAssign<&Self> for Vector {
         self.0 .0.sub_assign(rhs.0 .0)
     }
 }
+impl Mul<f32> for Vector {
+    type Output = Vector;
+    #[inline]
+    fn mul(self, rhs: f32) -> Self::Output {
+        Vector(self.0 * rhs)
+    }
+}
 impl Div<f32> for Vector {
     type Output = Vector;
     #[inline]
@@ -138,24 +142,25 @@ impl PartialEq for Vector {
         self.0.eq(other)
     }
 }
-impl PartialEq<Tuple> for Vector {
+impl PartialEq<Vert4> for Vector {
     #[inline]
-    fn eq(&self, other: &Tuple) -> bool {
+    fn eq(&self, other: &Vert4) -> bool {
         self.0.eq(other)
     }
 }
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Pointlike;
     #[test]
     fn vector_constructor_w_eq_zero() {
-        let v = Vector::new(4.0, -4.0, 3.0);
-        assert!(v == Tuple::new(4.0, -4.0, 3.0, 0.0));
+        let v = vector!(4.0, -4.0, 3.0);
+        assert!(v == Vert4::new(4.0, -4.0, 3.0, 0.0));
     }
     #[test]
     fn a_tuple_with_w_eq_zero_is_a_vector() {
-        let a = Vector::new(4.3, -4.2, 3.1);
-        assert!(a == Tuple::new(4.3, -4.2, 3.1, 0.0));
+        let a = vector!(4.3, -4.2, 3.1);
+        assert!(a == Vert4::new(4.3, -4.2, 3.1, 0.0));
         assert!(!a.is_point());
         assert!(a.is_vector());
     }
@@ -171,55 +176,6 @@ mod tests {
         fn vector_from_zero_vector() {
             let v = vector!(1.0, -2.0, 3.0);
             assert!((Vector::ZERO - v) == vector!(-1.0, 2.0, -3.0))
-        }
-    }
-    mod mag {
-        use super::*;
-        #[test]
-        fn unit_1() {
-            let v = Vector::X;
-            assert!(v.mag() == 1.0);
-        }
-        #[test]
-        fn unit_2() {
-            let v = Vector::Y;
-            assert!(v.mag() == 1.0);
-        }
-        #[test]
-        fn unit_3() {
-            let v = Vector::Z;
-            assert!(v.mag() == 1.0);
-        }
-        #[test]
-        fn unit_4() {
-            let v = vector!(1.0, 2.0, 3.0);
-            assert!(v.mag() == 14.0_f32.sqrt());
-        }
-        #[test]
-        fn unit_5() {
-            let v = vector!(-1.0, -2.0, -3.0);
-            assert!(v.mag() == 14.0_f32.sqrt());
-        }
-    }
-    mod norm {
-        use cmp::SortaEq;
-
-        use super::*;
-        #[test]
-        fn unit_1() {
-            let v = vector!(4.0, 0.0, 0.0);
-            assert!(v.norm() == vector!(1.0, 0.0, 0.0));
-        }
-        #[test]
-        fn unit_2() {
-            let v = vector!(1.0, 2.0, 3.0);
-            assert!(v.norm() == vector!(0.26726, 0.53452, 0.80178))
-        }
-        #[test]
-        fn unit_3() {
-            let v = vector!(1.0, 2.0, 3.0);
-            let norm = v.norm();
-            assert!(norm.mag().ehh_maybe(&1.0));
         }
     }
 }

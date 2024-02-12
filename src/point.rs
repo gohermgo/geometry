@@ -1,6 +1,16 @@
-use crate::{Tuple, Vector};
+use crate::{Vector, Vert4};
 use std::ops::{Add, AddAssign, Sub, SubAssign};
-pub struct Point(pub(crate) Tuple);
+pub struct Point(pub(crate) Vert4);
+impl Point {
+    #[inline]
+    pub fn x(&self) -> f32 {
+        self.0.x()
+    }
+    #[inline]
+    pub fn y(&self) -> f32 {
+        self.0.y()
+    }
+}
 // impl Pointlike for Point {
 //     #[inline]
 //     fn new(x: f32, y: f32, z: f32) -> Self {
@@ -155,26 +165,26 @@ impl PartialEq for Point {
         self.0.eq(other)
     }
 }
-impl PartialEq<Tuple> for Point {
+impl PartialEq<Vert4> for Point {
     #[inline]
-    fn eq(&self, other: &Tuple) -> bool {
+    fn eq(&self, other: &Vert4) -> bool {
         self.0.eq(other)
     }
 }
 #[cfg(test)]
 mod tests {
-    use crate::{Point, Pointlike, Tuple, Vector};
+    use crate::{Point, Pointlike, Vector, Vert4};
 
     #[test]
     fn point_constructor_w_eq_one() {
         let p = Point::new(4.0, -4.0, 3.0);
-        assert!(p == Tuple::new(4.0, -4.0, 3.0, 1.0));
+        assert!(p == Vert4::new(4.0, -4.0, 3.0, 1.0));
     }
 
     #[test]
     fn a_tuple_with_w_eq_one_is_a_point() {
         let a = Point::new(4.3, -4.2, 3.1);
-        assert!(a == Tuple::new(4.3, -4.2, 3.1, 1.0));
+        assert!(a == Vert4::new(4.3, -4.2, 3.1, 1.0));
         assert!(a.is_point());
         assert!(!a.is_vector());
     }

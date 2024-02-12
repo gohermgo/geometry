@@ -16,7 +16,7 @@ macro_rules! simd {
 }
 macro_rules! tuple {
     ($x:expr, $y:expr, $z:expr, $w:expr) => {
-        Tuple::new($x, $y, $z, $w)
+        Vert4::new($x, $y, $z, $w)
     };
 }
 macro_rules! tuple_4 {

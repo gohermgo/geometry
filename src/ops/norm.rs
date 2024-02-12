@@ -34,3 +34,26 @@ impl NormAssign for Vector {
         *self /= self.mag()
     }
 }
+#[cfg(test)]
+mod tests {
+    use crate::Pointlike;
+    use cmp::SortaEq;
+
+    use super::*;
+    #[test]
+    fn unit_1() {
+        let v = Vector::new(4.0, 0.0, 0.0);
+        assert!(v.norm() == Vector::new(1.0, 0.0, 0.0));
+    }
+    #[test]
+    fn unit_2() {
+        let v = Vector::new(1.0, 2.0, 3.0);
+        assert!(v.norm() == Vector::new(0.26726, 0.53452, 0.80178))
+    }
+    #[test]
+    fn unit_3() {
+        let v = Vector::new(1.0, 2.0, 3.0);
+        let norm = v.norm();
+        assert!(norm.mag().ehh_maybe(&1.0));
+    }
+}

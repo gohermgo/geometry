@@ -1,4 +1,4 @@
-use crate::{Point, Tuple, Vector};
+use crate::{Point, Vector, Vert4};
 pub trait Pointlike {
     fn new(x: f32, y: f32, z: f32) -> Self;
     fn is_vector(&self) -> bool;
@@ -10,7 +10,7 @@ pub trait Pointlike {
 impl Pointlike for Vector {
     #[inline]
     fn new(x: f32, y: f32, z: f32) -> Self {
-        Self(Tuple::new(x, y, z, 0.0_f32))
+        Self(Vert4::new(x, y, z, 0.0_f32))
     }
     #[inline]
     fn is_vector(&self) -> bool {
@@ -20,7 +20,7 @@ impl Pointlike for Vector {
 impl Pointlike for Point {
     #[inline]
     fn new(x: f32, y: f32, z: f32) -> Self {
-        Self(Tuple::new(x, y, z, 1.0_f32))
+        Self(Vert4::new(x, y, z, 1.0_f32))
     }
     #[inline]
     fn is_vector(&self) -> bool {
