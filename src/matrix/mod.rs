@@ -5,29 +5,37 @@ use std::{
 
 use crate::{Vert2, Vert3, Vert4};
 
-#[const_trait]
+mod ops;
+pub use ops::{Det, Submat};
+
 pub trait Matrix<'mat, const DIM: usize>
 where
     &'mat Self: Into<[Self::Vert; DIM]>,
     Self: 'mat + Into<[Self::Vert; DIM]>,
 {
     type Vert;
+    fn new(array: [f32; DIM * DIM]) -> Self;
     fn identity() -> Self;
     fn transpose(&self) -> Self;
     #[inline]
     fn as_column_vectors(&self) -> [Self::Vert; DIM] {
         self.transpose().into()
     }
+    #[inline]
     fn as_row_vectors(&'mat self) -> [Self::Vert; DIM] {
         self.into()
     }
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Mat2(f32x4);
+pub struct Mat2(pub(crate) f32x4);
 pub(crate) const T_SWIZZLE_2: [usize; 4] = [0, 2, 1, 3];
-impl<'mat> const Matrix<'mat, 2> for Mat2 {
+impl<'mat> Matrix<'mat, 2> for Mat2 {
     type Vert = Vert2;
+    #[inline]
+    fn new(array: [f32; 2 * 2]) -> Self {
+        Self(f32x4::from_array(array))
+    }
     #[inline]
     fn identity() -> Self {
         Self(f32x4::from_array([1.0, 0.0, 0.0, 1.0]))
@@ -70,8 +78,12 @@ impl From<&Mat2> for [Vert2; 2] {
 }
 #[derive(Debug, PartialEq)]
 pub struct Mat3([f32; 9]);
-impl<'mat> const Matrix<'mat, 3> for Mat3 {
+impl<'mat> Matrix<'mat, 3> for Mat3 {
     type Vert = Vert3;
+    #[inline]
+    fn new(array: [f32; 3 * 3]) -> Self {
+        Self(array)
+    }
     #[inline]
     fn identity() -> Self {
         Self([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
@@ -123,8 +135,12 @@ impl From<&Mat3> for [Vert3; 3] {
 #[derive(Debug, PartialEq)]
 pub struct Mat4(f32x16);
 pub(crate) const T_SWIZZLE_4: [usize; 16] = [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15];
-impl<'mat> const Matrix<'mat, 4> for Mat4 {
+impl<'mat> Matrix<'mat, 4> for Mat4 {
     type Vert = Vert4;
+    #[inline]
+    fn new(array: [f32; 4 * 4]) -> Self {
+        Self(f32x16::from_array(array))
+    }
     #[inline]
     fn identity() -> Self {
         Self(f32x16::from_array([
