@@ -1,7 +1,10 @@
 mod cofactor;
-mod det;
-pub use det::Det;
+pub use cofactor::Cofactor;
+mod determinant;
+pub use determinant::Determinant;
+mod inverse;
+pub use inverse::Inverse;
 mod minor;
 pub use minor::Minor;
-mod submat;
-pub use submat::Submat;
+mod submatrix;
+pub use submatrix::Submatrix;

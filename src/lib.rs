@@ -4,7 +4,7 @@
 #![feature(generic_const_exprs)]
 #![feature(portable_simd)]
 pub mod matrix;
-pub use matrix::{Det, Mat2, Mat3, Mat4, Matrix, Submat};
+pub use matrix::{Cofactor, Determinant, Mat2, Mat3, Mat4, Matrix, Minor, Submatrix};
 pub mod traits;
 pub use traits::Pointlike;
 pub mod ops;
