@@ -173,7 +173,7 @@ impl PartialEq<Vert4> for Point {
 }
 #[cfg(test)]
 mod tests {
-    use crate::{Point, Pointlike, Vector, Vert4};
+    use crate::{Point, PointType, Vector, Vert4};
 
     #[test]
     fn point_constructor_w_eq_one() {

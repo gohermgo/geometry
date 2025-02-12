@@ -24,7 +24,7 @@ impl Mag for Vector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Pointlike;
+    use crate::PointType;
     #[test]
     fn unit_1() {
         let v = Vector::X;

@@ -36,8 +36,8 @@ impl NormAssign for Vector {
 }
 #[cfg(test)]
 mod tests {
-    use crate::Pointlike;
-    use cmp::SortaEq;
+    use crate::cmp::SortaEq;
+    use crate::PointType;
 
     use super::*;
     #[test]
@@ -48,6 +48,7 @@ mod tests {
     #[test]
     fn unit_2() {
         let v = Vector::new(1.0, 2.0, 3.0);
+        println!("NORM {:?}", v.norm().0);
         assert!(v.norm() == Vector::new(0.26726, 0.53452, 0.80178))
     }
     #[test]

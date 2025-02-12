@@ -1,5 +1,5 @@
+use crate::cmp::SortaEq;
 use crate::{Point, Vector};
-use cmp::SortaEq;
 use std::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
     simd::{f32x2, f32x4, Simd},
@@ -86,6 +86,14 @@ impl Vert4 {
     #[inline]
     pub fn y(&self) -> f32 {
         self.0[1]
+    }
+    #[inline]
+    pub fn z(&self) -> f32 {
+        self.0[2]
+    }
+    #[inline]
+    pub fn w(&self) -> f32 {
+        self.0[3]
     }
 }
 // From impls---------
@@ -333,19 +341,19 @@ impl Div<&f32> for &Vert4 {
 impl PartialEq for Vert4 {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.0.ehh_maybe(&other.0)
+        self.ehh_maybe(&other)
     }
 }
 impl PartialEq<Vector> for Vert4 {
     #[inline]
     fn eq(&self, other: &Vector) -> bool {
-        self.0.ehh_maybe(&other.0 .0)
+        self.ehh_maybe(&other.0)
     }
 }
 impl PartialEq<Point> for Vert4 {
     #[inline]
     fn eq(&self, other: &Point) -> bool {
-        self.0.ehh_maybe(&other.0 .0)
+        self.ehh_maybe(&other.0)
     }
 }
 #[cfg(test)]

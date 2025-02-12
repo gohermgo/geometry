@@ -3,7 +3,7 @@ use std::{
     simd::{f32x16, f32x4, num::SimdFloat, simd_swizzle},
 };
 
-use crate::{Vert2, Vert3, Vert4};
+use crate::{cmp::SortaEq, Vert2, Vert3, Vert4};
 
 mod ops;
 pub use ops::{Cofactor, Determinant, Minor, Submatrix};
@@ -135,7 +135,7 @@ impl From<&Mat3> for [Vert3; 3] {
         [v0, v1, v2]
     }
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug)]
 pub struct Mat4(f32x16);
 pub(crate) const T_SWIZZLE_4: [usize; 16] = [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15];
 impl Matrix<4> for Mat4 {
@@ -313,7 +313,14 @@ impl Mul<&Vert4> for &Mat4 {
         output
     }
 }
-
+impl PartialEq for Mat4 {
+    fn eq(&self, other: &Self) -> bool {
+        self.as_row_vectors()
+            .iter()
+            .zip(other.as_row_vectors())
+            .all(|(lhs, rhs)| SortaEq::ehh_maybe(lhs, &rhs))
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;

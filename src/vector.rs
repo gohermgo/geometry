@@ -1,5 +1,6 @@
 //! Vector type
 use crate::Vert4;
+use core::fmt::{Debug, Formatter, Result as FmtResult};
 use std::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, Sub, SubAssign},
     simd::f32x4,
@@ -151,7 +152,7 @@ impl PartialEq<Vert4> for Vector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Pointlike;
+    use crate::PointType;
     #[test]
     fn vector_constructor_w_eq_zero() {
         let v = vector!(4.0, -4.0, 3.0);

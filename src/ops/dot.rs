@@ -35,7 +35,7 @@ impl Dot<&Vector> for &Vector {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Pointlike;
+    use crate::PointType;
     #[test]
     fn two_vectors() {
         let a = Vector::new(1.0, 2.0, 3.0);
