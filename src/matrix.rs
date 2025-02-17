@@ -6,6 +6,7 @@ use std::{
 use crate::{cmp::SortaEq, Vert2, Vert3, Vert4};
 
 mod ops;
+mod transformations;
 pub use ops::{Cofactor, Determinant, Minor, Submatrix};
 
 pub trait Matrix<const DIM: usize> {
