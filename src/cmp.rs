@@ -1,3 +1,5 @@
+use std::simd::{cmp::SimdPartialEq, LaneCount, Simd, SimdElement, SupportedLaneCount};
+
 use crate::Vert4;
 pub trait SortaEq<Rhs = Self> {
     fn ehh_maybe(&self, rhs: &Rhs) -> bool;
@@ -7,17 +9,20 @@ impl SortaEq for f32 {
         (self - rhs).abs() < 1e-4
     }
 }
-impl SortaEq for Vert4 {
-    #[inline(always)]
+impl<const N: usize> SortaEq for Simd<f32, N>
+where
+    LaneCount<N>: SupportedLaneCount,
+{
     fn ehh_maybe(&self, rhs: &Self) -> bool {
-        let abs_diff = std::simd::num::SimdFloat::abs(self.0 - rhs.0);
-        println!("AD {abs_diff:?}");
-        let ad = self - &rhs;
-        println!("AD {ad:?}");
-        let x_sorta = ad.x() < 1e-4;
-        let y_sorta = ad.y() < 1e-4;
-        let z_sorta = ad.z() < 1e-4;
-        let w_sorta = ad.w() < 1e-4;
-        x_sorta && y_sorta && z_sorta && w_sorta
+        println!();
+        self.as_array()
+            .iter()
+            .zip(rhs.as_array().iter())
+            .all(|(lhs, rhs)| {
+                let abs_diff = f32::max(*lhs, *rhs) - f32::min(*lhs, *rhs);
+                let cond = abs_diff < 1e-4;
+                println!("A = {lhs}, B = {rhs}, AD = {abs_diff} -> {cond}");
+                cond
+            })
     }
 }
