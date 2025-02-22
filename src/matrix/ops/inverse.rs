@@ -1,6 +1,6 @@
 use std::ops::Index;
 
-use crate::{Cofactor, Determinant, Mat3, Mat4, Matrix};
+use crate::{Cofactor, Determinant, Mat3, Matr4, Matrix};
 
 pub trait Inverse<const DIM: usize, const SUB: usize>: Matrix<DIM> {
     fn is_invertible(&self) -> bool
@@ -34,7 +34,7 @@ pub trait Inverse<const DIM: usize, const SUB: usize>: Matrix<DIM> {
 
 impl Inverse<3, 2> for Mat3 {}
 
-impl Inverse<4, 3> for Mat4 {}
+impl Inverse<4, 3> for Matr4 {}
 
 #[cfg(test)]
 mod tests {
@@ -45,7 +45,7 @@ mod tests {
         use super::*;
         #[test]
         fn invertible() {
-            let a = Mat4::new([
+            let a = Matr4::new([
                 6.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 6.0, 4.0, -9.0, 3.0, -7.0, 9.0, 1.0, 7.0, -6.0,
             ]);
             assert_eq!(a.determinant(), -2120.0);
@@ -53,7 +53,7 @@ mod tests {
         }
         #[test]
         fn non_invertible() {
-            let a = Mat4::new([
+            let a = Matr4::new([
                 -4.0, 2.0, -2.0, -3.0, 9.0, 6.0, 2.0, 6.0, 0.0, -5.0, 1.0, -5.0, 0.0, 0.0, 0.0, 0.0,
             ]);
             assert_eq!(a.determinant(), 0.0);
@@ -61,7 +61,7 @@ mod tests {
         }
         #[test]
         fn calculating_inverse_1() {
-            let a = Mat4::new([
+            let a = Matr4::new([
                 -5.0, 2.0, 6.0, -8.0, 1.0, -5.0, 1.0, 8.0, 7.0, 7.0, -6.0, -7.0, 1.0, -3.0, 7.0,
                 4.0,
             ]);
@@ -80,12 +80,12 @@ mod tests {
             let rows = i.as_row_vectors();
             assert_eq!(rows[0], Vert4::new(0.21805, 0.45113, 0.24060, -0.04511));
             assert_eq!(rows[1], Vert4::new(-0.80827, -1.45677, -0.44361, 0.52068));
-            assert_eq!(rows[2], Vert4::new(0.07895, -0.22368, -0.05263, 0.19737));
+            assert_eq!(rows[2], Vert4::new(-0.07895, -0.22368, -0.05263, 0.19737));
             assert_eq!(rows[3], Vert4::new(-0.52256, -0.81391, -0.30075, 0.30639));
         }
         #[test]
         fn calculating_inverse_2() {
-            let a = Mat4::new([
+            let a = Matr4::new([
                 8.0, -5.0, 9.0, 2.0, 7.0, 5.0, 6.0, 1.0, -6.0, 0.0, 9.0, 6.0, -3.0, 0.0, -9.0, -4.0,
             ]);
 
@@ -100,7 +100,7 @@ mod tests {
         }
         #[test]
         fn calculating_inverse_3() {
-            let m = Mat4::new([
+            let m = Matr4::new([
                 9.0, 3.0, 0.0, 9.0, -5.0, -2.0, -6.0, -3.0, -4.0, 9.0, 6.0, 4.0, -7.0, 6.0, 6.0,
                 2.0,
             ]);
@@ -116,11 +116,11 @@ mod tests {
         }
         #[test]
         fn matrix_product_and_product_with_inverse_of_second_gives_original() {
-            let m1 = Mat4::new([
+            let m1 = Matr4::new([
                 3.0, -9.0, 7.0, 3.0, 3.0, -8.0, 2.0, -9.0, -4.0, 4.0, 4.0, 1.0, -6.0, 5.0, -1.0,
                 1.0,
             ]);
-            let m2 = Mat4::new([
+            let m2 = Matr4::new([
                 8.0, 2.0, 2.0, 2.0, 3.0, -1.0, 7.0, 0.0, 7.0, 0.0, 5.0, 4.0, 6.0, -2.0, 0.0, 5.0,
             ]);
             let m1_m2_prod = &m1 * &m2;

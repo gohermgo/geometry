@@ -1,4 +1,4 @@
-use crate::{Determinant, Mat3, Mat4, Matrix, Minor};
+use crate::{Determinant, Mat3, Matr4, Matrix, Minor};
 use std::ops::Index;
 
 pub trait Cofactor<const DIM: usize, const SUB: usize>: Matrix<DIM> + Minor<DIM, SUB> {
@@ -22,7 +22,7 @@ pub trait Cofactor<const DIM: usize, const SUB: usize>: Matrix<DIM> + Minor<DIM,
 
 impl Cofactor<3, 2> for Mat3 {}
 
-impl Cofactor<4, 3> for Mat4 {}
+impl Cofactor<4, 3> for Matr4 {}
 
 #[cfg(test)]
 mod tests {
