@@ -37,7 +37,12 @@ const SIMD_3_X: [f32; 3] = [1.0_f32, 0.0_f32, 0.0_f32];
 const SIMD_3_Y: [f32; 3] = [0.0_f32, 1.0_f32, 0.0_f32];
 const SIMD_3_Z: [f32; 3] = [0.0_f32, 0.0_f32, 1.0_f32];
 #[derive(Debug)]
-pub struct Vert3(pub(crate) [f32; 3]);
+pub struct Vert3(pub [f32; 3]);
+impl PartialEq for Vert3 {
+    fn eq(&self, other: &Self) -> bool {
+        SortaEq::ehh_maybe(&self.0, &other.0)
+    }
+}
 impl Vertex for Vert3 {}
 impl Vert3 {
     pub const ZERO: Self = Self(SIMD_3_ZERO);
@@ -102,8 +107,8 @@ impl Vert4 {
         self.0[2]
     }
     #[inline]
-    pub fn w(&self) -> f32 {
-        self.0[3]
+    pub const fn w(&self) -> f32 {
+        self.0.as_array()[3]
     }
 }
 // From impls---------

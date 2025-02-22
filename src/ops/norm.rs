@@ -1,4 +1,4 @@
-use crate::{ops::Mag, Vector};
+use crate::{ops::Mag, Vector, Vert4};
 use std::simd::f32x4;
 
 pub trait Norm {
@@ -10,6 +10,13 @@ impl Norm for f32x4 {
     #[inline]
     fn norm(&self) -> Self::Output {
         self / f32x4::from_array([self.mag(); 4])
+    }
+}
+impl Norm for Vert4 {
+    type Output = Vert4;
+    #[inline]
+    fn norm(&self) -> Self::Output {
+        Vert4(self.0 / f32x4::from_array([self.0.mag(); 4]))
     }
 }
 impl Norm for Vector {

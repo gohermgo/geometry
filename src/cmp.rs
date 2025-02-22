@@ -9,20 +9,19 @@ impl SortaEq for f32 {
         (self - rhs).abs() < 1e-4
     }
 }
+impl<const N: usize> SortaEq for [f32; N] {
+    fn ehh_maybe(&self, rhs: &Self) -> bool {
+        self.iter().zip(rhs.iter()).all(|(lhs, rhs)| {
+            let abs_diff = f32::max(*lhs, *rhs) - f32::min(*lhs, *rhs);
+            abs_diff < 1e-4
+        })
+    }
+}
 impl<const N: usize> SortaEq for Simd<f32, N>
 where
     LaneCount<N>: SupportedLaneCount,
 {
     fn ehh_maybe(&self, rhs: &Self) -> bool {
-        println!();
-        self.as_array()
-            .iter()
-            .zip(rhs.as_array().iter())
-            .all(|(lhs, rhs)| {
-                let abs_diff = f32::max(*lhs, *rhs) - f32::min(*lhs, *rhs);
-                let cond = abs_diff < 1e-4;
-                println!("A = {lhs}, B = {rhs}, AD = {abs_diff} -> {cond}");
-                cond
-            })
+        SortaEq::ehh_maybe(self.as_array(), rhs.as_array())
     }
 }
