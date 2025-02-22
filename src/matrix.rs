@@ -719,12 +719,36 @@ impl Mul<Vert4> for Matr4 {
     type Output = Vert4;
     #[inline]
     fn mul(self, rhs: Vert4) -> Self::Output {
-        let mut output: Vert4 = Vert4::new(0.0, 0.0, 0.0, 0.0);
-        let rows = self.as_row_vectors();
-        for (idx, row) in rows.iter().enumerate() {
-            output.0[idx] = (row.0 * rhs.0).reduce_sum();
-        }
-        output
+        // let array = core::array::from_fn(|y_idx| 
+        //     {
+        //         let y_offset = y_idx * 4;
+        //         // let row_slice: &[f32] = unsafe { <f32x16 as AsRef<[f32]>>::as_ref(&self.0).get_unchecked(y_offset..y_offset+4) };
+        //         let p_elt = unsafe { self.0.as_array().as_ptr().add(y_offset) };
+        //         // let row_slice = unsafe {core::slice::from_raw_parts(p_elt, 4)};
+        //         let row_array = unsafe {[
+        //             p_elt.add(0).read() * rhs.0[0],
+        //             p_elt.add(1).read() * rhs.0[1],
+        //             p_elt.add(2).read() * rhs.0[2],
+        //             p_elt.add(3).read() * rhs.0[3],
+        //         ]};
+        //         // let sum_of_rows_array = core::array::from_fn(|x_idx| {
+        //         //     self.0[y_offset + x_idx]
+        //         // });
+        //         f32x4::from_array(row_array).reduce_sum()
+        //     }
+        // );
+        let arr: &[f32; 16] = self.0.as_array();
+
+        let arr_0 = f32x4::from_slice(unsafe {arr.get_unchecked(0..4)}) * rhs.0;
+        let arr_1 = f32x4::from_slice(unsafe {arr.get_unchecked(4..8)}) * rhs.0;
+        let arr_2 = f32x4::from_slice(unsafe {arr.get_unchecked(8..12)}) * rhs.0;
+        let arr_3 = f32x4::from_slice(unsafe {arr.get_unchecked(12..16)}) * rhs.0;
+        Vert4(f32x4::from_array([
+                    arr_0.reduce_sum(),
+                    arr_1.reduce_sum(),
+                    arr_2.reduce_sum(),
+                    arr_3.reduce_sum(),
+        ]))
     }
 }
 impl Mul<&Vert4> for Matr4 {

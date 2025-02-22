@@ -8,3 +8,6 @@ edition = "2021"
 [dependencies]
 # cmp = { path = "../cmp" }
 # ops = { path = "../ops" }
+[profile.bench]
+inherits = "release"
+debug = true
