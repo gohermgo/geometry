@@ -553,6 +553,38 @@ mod transformation_tests {
     #[test]
     fn a_shearing_transformation_moves_x_in_proportion_to_y() {
         let transform = Matr4::shearing(ShearingProportion::new(1., 0.), ShearingProportion::default(), ShearingProportion::default());
+        let p = Vert4::point(2., 3., 4.);
+        assert_eq!(transform * p, Vert4::point(5., 3., 4.))
+    }
+    #[test]
+    fn a_shearing_transformation_moves_x_in_proportion_to_z() {
+        let transform = Matr4::shearing(ShearingProportion::new(0., 1.), ShearingProportion::default(), ShearingProportion::default());
+        let p = Vert4::point(2., 3., 4.);
+        assert_eq!(transform * p, Vert4::point(6., 3., 4.))
+    }
+    #[test]
+    fn a_shearing_transformation_moves_y_in_proportion_to_x() {
+        let transform = Matr4::shearing(ShearingProportion::default(), ShearingProportion::new(1., 0.), ShearingProportion::default());
+        let p = Vert4::point(2., 3., 4.);
+        assert_eq!(transform * p, Vert4::point(2., 5., 4.))
+    }
+    #[test]
+    fn a_shearing_transformation_moves_y_in_proportion_to_z() {
+        let transform = Matr4::shearing(ShearingProportion::default(), ShearingProportion::new(0., 1.), ShearingProportion::default());
+        let p = Vert4::point(2., 3., 4.);
+        assert_eq!(transform * p, Vert4::point(2., 7., 4.))
+    }
+    #[test]
+    fn a_shearing_transformation_moves_z_in_proportion_to_x() {
+        let transform = Matr4::shearing(ShearingProportion::default(), ShearingProportion::default(), ShearingProportion::new(1., 0.));
+        let p = Vert4::point(2., 3., 4.);
+        assert_eq!(transform * p, Vert4::point(2., 3., 6.))
+    }
+    #[test]
+    fn a_shearing_transformation_moves_z_in_proportion_to_y() {
+        let transform = Matr4::shearing(ShearingProportion::default(), ShearingProportion::default(), ShearingProportion::new(0., 1.));
+        let p = Vert4::point(2., 3., 4.);
+        assert_eq!(transform * p, Vert4::point(2., 3., 7.))
     }
 }
 pub(crate) const T_SWIZZLE_4: [usize; 16] = [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15];
