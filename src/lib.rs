@@ -2,7 +2,6 @@
 #![feature(const_trait_impl)]
 #![feature(generic_const_exprs)]
 #![feature(portable_simd)]
-#![feature(stmt_expr_attributes)]
 pub mod matrix;
 pub use matrix::{Cofactor, Determinant, Mat2, Mat3, Matr4, Matrix, Minor, Submatrix};
 pub mod cmp;

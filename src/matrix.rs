@@ -136,22 +136,22 @@ impl From<&Mat3> for [Vert3; 3] {
         [v0, v1, v2]
     }
 }
-pub trait RotationAxis {
+pub trait Axis {
     type Primary;
     type Secondary;
 }
 pub struct X;
-impl RotationAxis for X {
+impl Axis for X {
     type Primary = Y;
     type Secondary = Z;
 }
 pub struct Y;
-impl RotationAxis for Y {
+impl Axis for Y {
     type Primary = X;
     type Secondary = Z;
 }
 pub struct Z;
-impl RotationAxis for Z {
+impl Axis for Z {
     type Primary = X;
     type Secondary = Y;
 }
@@ -231,19 +231,49 @@ pub struct RotationAbout<T> {
 }
 impl<T> RotationAbout<T> {
     #[inline]
-    pub fn new_rad(rad: f32) -> RotationAbout<T> where T: RotationAxis {
+    pub fn new_rad(rad: f32) -> RotationAbout<T> where T: Axis {
         RotationAbout { rad , rotation_axis_marker:PhantomData  }
     }
-    pub fn new_deg(deg: f32) -> RotationAbout<T> where T: RotationAxis {
+    pub fn new_deg(deg: f32) -> RotationAbout<T> where T: Axis {
         RotationAbout::new_rad(deg.to_radians())
     }
 }
-pub trait IntoAxes<T> where T: RotationAxis {
+pub trait IntoAxes<T> where T: Axis {
     fn into_axes(self) -> RotationAxes<T::Primary, T::Secondary>;
 }
-impl<T> IntoAxes<T> for RotationAbout<T> where T: RotationAxis {
+impl<T> IntoAxes<T> for RotationAbout<T> where T: Axis {
     fn into_axes(self) -> RotationAxes<T::Primary, T::Secondary> {
         RotationAxes::new_rad(self.rad)
+    }
+}
+pub struct ShearOf<T, Ax>(pub T, PhantomData<Ax>);
+impl<T, Ax> ShearOf<T, Ax> where Ax: Axis {
+    #[inline]
+    pub const fn new(value: T) -> ShearOf<T, Ax> {
+        ShearOf(value, PhantomData)
+    }
+}
+pub struct ShearingProportion<Ax: Axis> {
+    ratio_to_primary: ShearOf<f32, Ax::Primary>,
+    ratio_to_secondary: ShearOf<f32, Ax::Secondary>,
+    axis_marker: PhantomData<Ax>
+}
+impl<Ax: Axis> Default for ShearingProportion<Ax> where Ax::Primary: Axis, Ax::Secondary: Axis {
+    fn default() -> Self {
+        ShearingProportion::new(f32::default(), f32::default())
+    }
+}
+impl<Ax: Axis> ShearingProportion<Ax> {
+    pub fn new(to_primary: f32, to_secondary: f32) -> ShearingProportion<Ax>
+    where 
+        Ax::Primary: Axis, 
+        Ax::Secondary: Axis
+    {
+        ShearingProportion {
+            ratio_to_primary: ShearOf::new(to_primary),
+            ratio_to_secondary: ShearOf::new(to_secondary),
+            axis_marker: PhantomData
+        }
     }
 }
 #[derive(Debug)]
@@ -252,40 +282,53 @@ impl Matr4 {
     #[inline]
     pub const fn translation(tx: f32, ty: f32, tz: f32) -> Matr4 {
         #[rustfmt::skip]
-        Matr4(f32x16::from_array([
-            1., 0., 0., tx, 
-            0., 1., 0., ty,
-            0., 0., 1., tz,
-            0., 0., 0., 1.
-        ]))
+        mod inner {
+            use super::{Matr4, f32x16};
+            pub const fn create(tx: f32, ty: f32, tz: f32) -> Matr4 {
+                Matr4(f32x16::from_array([
+                    1., 0., 0., tx, 
+                    0., 1., 0., ty,
+                    0., 0., 1., tz,
+                    0., 0., 0., 1.
+                ]))
+            }
+        }
+        inner::create(tx, ty, tz)
     }
     #[inline]
     pub const fn scaling(sx: f32, sy: f32, sz: f32) -> Matr4 {
+
         #[rustfmt::skip]
-        Matr4(f32x16::from_array([
-            sx, 0., 0., 0., 
-            0., sy, 0., 0.,
-            0., 0., sz, 0.,
-            0., 0., 0., 1.
-        ]))
+        mod inner {
+            use super::{Matr4, f32x16};
+            pub const fn create(sx: f32, sy: f32, sz: f32) -> Matr4 {
+                Matr4(f32x16::from_array([
+                    sx, 0., 0., 0., 
+                    0., sy, 0., 0.,
+                    0., 0., sz, 0.,
+                    0., 0., 0., 1.
+                ]))
+            }
+        }
+        inner::create(sx, sy, sz)
     }
     #[inline]
     pub fn rotation_x_rad(rad: f32) -> Matr4 {
+        #[rustfmt::skip]
+        mod inner {
+            use super::{Matr4, f32x16};
+            pub const fn create(yy: f32, yz: f32, zy: f32, zz: f32) -> Matr4 {
+                Matr4(f32x16::from_array([
+                    1., 0., 0., 0., 
+                    0., yy, yz, 0.,
+                    0., zy, zz, 0.,
+                    0., 0., 0., 1.
+                ]))
+            }
+        }
         let rotation: RotationAbout<X> = RotationAbout::new_rad(rad);
         let axes = rotation.into_axes();
-
-        let yy = axes.yy();
-        let yz = axes.yz();
-        let zy = axes.zy();
-        let zz = axes.zz();
-
-        #[rustfmt::skip]
-        Matr4(f32x16::from_array([
-            1., 0., 0., 0., 
-            0., yy, yz, 0.,
-            0., zy, zz, 0.,
-            0., 0., 0., 1.
-        ]))
+        inner::create(axes.yy(), axes.yz(), axes.zy(), axes.zz())
     }
     #[inline]
     pub fn rotation_x_deg(deg: f32) -> Matr4 {
@@ -297,18 +340,22 @@ impl Matr4 {
         let rotation: RotationAbout<Y> = RotationAbout::new_rad(rad);
         let axes = rotation.into_axes();
 
-        let xx = axes.xx();
-        let xz = axes.xz();
-        let zx = axes.zx();
-        let zz = axes.zz();
-
         #[rustfmt::skip]
-        Matr4(f32x16::from_array([
-            xx, 0., xz, 0., 
-            0., 1., 0., 0.,
-            zx, 0., zz, 0.,
-            0., 0., 0., 1.
-        ]))
+        mod inner {
+            use super::{Matr4, f32x16};
+            #[inline]
+            pub fn create(xx: f32, xz: f32, zx: f32, zz: f32) -> Matr4 {
+                let array = 
+                [
+                    xx, 0., xz, 0., 
+                    0., 1., 0., 0.,
+                    zx, 0., zz, 0.,
+                    0., 0., 0., 1.
+                ];
+                Matr4(f32x16::from_array(array))
+            }
+        }
+        inner::create(axes.xx(), axes.xz(), axes.zx(), axes.zz())
     }
     #[inline]
     pub fn rotation_y_deg(deg: f32) -> Matr4 {
@@ -319,24 +366,60 @@ impl Matr4 {
         let rotation: RotationAbout<Z> = RotationAbout::new_rad(rad);
         let axes = rotation.into_axes();
 
-        let xx = axes.xx();
-        let xy = axes.xy();
-        let yx = axes.yx();
-        let yy = axes.yy();
-
         #[rustfmt::skip]
-        Matr4(f32x16::from_array([
-            xx, xy, 0., 0., 
-            yx, yy, 0., 0.,
-            0., 0., 1., 0.,
-            0., 0., 0., 1.
-        ]))
+        mod inner {
+            use super::{Matr4, f32x16};
+            #[inline]
+            pub fn create(xx: f32, xy: f32, yx: f32, yy: f32) -> Matr4 {
+                let array = 
+                [
+                    xx, xy, 0., 0., 
+                    yx, yy, 0., 0.,
+                    0., 0., 1., 0.,
+                    0., 0., 0., 1.
+                ];
+                Matr4(f32x16::from_array(array))
+            }
+        }
+        inner::create(axes.xx(), axes.xy(), axes.yx(), axes.yy())
     }
     #[inline]
     pub fn rotation_z_deg(deg: f32) -> Matr4 {
         Matr4::rotation_z_rad(deg.to_radians())
     }
-
+    #[inline]
+    pub const fn shearing(
+        ShearingProportion {
+            ratio_to_primary: ShearOf(xy, _xy),
+            ratio_to_secondary: ShearOf(xz, _xz),
+            ..
+        }: ShearingProportion<X>, 
+        ShearingProportion {
+            ratio_to_primary: ShearOf(yx, _yx),
+            ratio_to_secondary: ShearOf(yz, _yz),
+            ..
+        }: ShearingProportion<Y>,
+        ShearingProportion {
+            ratio_to_primary: ShearOf(zx, _zx),
+            ratio_to_secondary: ShearOf(zy, _zy),
+            ..
+        }: ShearingProportion<Z>) -> Matr4 {
+        #[rustfmt::skip]
+        mod inner {
+            use super::{Matr4, f32x16};
+            #[inline]
+            pub const fn create(xy: f32, xz: f32, yx: f32, yz: f32, zx: f32, zy: f32) -> Matr4 {
+                let array = [
+                    1., xy, xz, 0., 
+                    yx, 1., yz, 0.,
+                    zx, zy, 1., 0.,
+                    0., 0., 0., 1.
+                ];
+                Matr4(f32x16::from_array(array))
+            }
+        }
+        inner::create(xy, xz, yx, yz, zx, zy)
+    }
 }
 #[cfg(test)]
 mod transformation_tests {
@@ -463,6 +546,13 @@ mod transformation_tests {
         let full_quarter = Matr4::rotation_z_rad(PI / 2.);
         let full_rotp = full_quarter *&p;
         assert_eq!(full_rotp, Vert4::point(-1., 0., 0.))
+    }
+    //
+    // Shearing tests
+    //
+    #[test]
+    fn a_shearing_transformation_moves_x_in_proportion_to_y() {
+        let transform = Matr4::shearing(ShearingProportion::new(1., 0.), ShearingProportion::default(), ShearingProportion::default());
     }
 }
 pub(crate) const T_SWIZZLE_4: [usize; 16] = [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15];
