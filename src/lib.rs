@@ -50,6 +50,5 @@ impl PointType for Point {
 }
 pub fn clock(twelve: Vert4) -> impl Iterator<Item = Vert4> {
     use core::f32::consts::PI;
-    let rot_step = Matr4::rotation_y_rad(PI / 6.);
-    (0..12).map(move |_| &rot_step * &twelve)
+    (0..12).map(move |idx| Matr4::rotation_y_rad((idx as f32 * (2. * PI)) / 12.0) * &twelve)
 }
