@@ -48,3 +48,8 @@ impl PointType for Point {
         false
     }
 }
+pub fn clock(twelve: Vert4) -> impl Iterator<Item = Vert4> {
+    use core::f32::consts::PI;
+    let rot_step = Matr4::rotation_y_rad(PI / 6.);
+    (0..12).map(move |_| &rot_step * &twelve)
+}
