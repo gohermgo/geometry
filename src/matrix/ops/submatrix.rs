@@ -1,10 +1,9 @@
 //! Submatrix-ing operation
 
 use crate::{
-    matrix::{AsArray, FromArray},
     Matr2, Matr3, Matr4,
+    matrix::{AsArray, FromArray},
 };
-#[const_trait]
 pub trait ConstIndex<Idx: ?Sized> {
     /// The returned type after indexing.
     type Output: ?Sized;
@@ -17,7 +16,7 @@ pub trait ConstIndex<Idx: ?Sized> {
     #[track_caller]
     fn const_index(&self, index: Idx) -> &Self::Output;
 }
-impl<T, const N: usize> const ConstIndex<usize> for [T; N] {
+impl<T, const N: usize> ConstIndex<usize> for [T; N] {
     type Output = T;
     #[inline]
     fn const_index(&self, index: usize) -> &Self::Output {

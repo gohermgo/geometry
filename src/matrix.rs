@@ -2,14 +2,14 @@ use core::marker::PhantomData;
 use core::ops::{Index, IndexMut};
 use core::ops::Mul;
 
-use std::simd::{f32x16, f32x4, num::SimdFloat, simd_swizzle, LaneCount, Simd, SimdElement, SupportedLaneCount};
+use std::simd::{f32x16, f32x4, simd_swizzle, LaneCount, Simd, SimdElement, SupportedLaneCount};
 
 use crate::{matrix::ops::ConstIndex, Vert2, Vert3, Vert4};
 
 mod ops;
 pub use ops::{Cofactor, Determinant, Minor, Submatrix, Inverse};
 
-#[const_trait]
+
 pub trait Matrix<const DIM: usize> {
     type Vert;
     fn identity() -> Self;
@@ -49,7 +49,6 @@ impl<T, const N: usize> AsArray<T, N> for Simd<T, N> where LaneCount<N>: Support
         self.as_array()
     }
 }
-#[const_trait]
 pub trait FromSlice<T> {
     fn from_slice(slice: &[T]) -> Self;
 }
@@ -103,14 +102,14 @@ impl Index<(usize, usize)> for Matr2 {
         &self.0[index.1 + (2 * index.0)]
     }
 }
-impl const ConstIndex<usize> for Matr2 {
+impl ConstIndex<usize> for Matr2 {
     type Output = f32;
     #[inline]
     fn const_index(&self, index: usize) -> &Self::Output {
         &self.0.as_array()[index]
     }
 }
-impl const ConstIndex<(usize, usize)> for Matr2 {
+impl ConstIndex<(usize, usize)> for Matr2 {
     type Output = f32;
     #[inline]
     fn const_index(&self, index: (usize, usize)) -> &Self::Output {
@@ -142,7 +141,7 @@ impl FromArray<f32, 9> for Matr3 {
         Matr3(array)
     }
 }
-impl const FromSlice<f32> for Matr3 {
+impl FromSlice<f32> for Matr3 {
     #[inline]
     fn from_slice(slice: &[f32]) -> Matr3 {
         assert!(
@@ -197,7 +196,7 @@ impl  Matrix<3> for Matr3 {
     //     self.into()
     // }
 }
-impl const ConstIndex<(usize, usize)> for Matr3 {
+impl ConstIndex<(usize, usize)> for Matr3 {
     type Output = f32;
     #[inline]
     fn const_index(&self, index: (usize, usize)) -> &Self::Output {
@@ -223,7 +222,7 @@ impl  FromArray<Vert3, 3> for Matr3 {
                 6.. => 2
             };
 
-            out_arr[idx] = arr[src_idx].0[idx % 3];
+            out_arr[idx] = arr[src_idx][idx % 3];
             idx += 1;
         }
         Matr3::from_array(out_arr)
@@ -571,21 +570,6 @@ impl Index<(usize, usize)> for Matr4 {
         &self.0[index.1 + (4 * index.0)]
     }
 }
-impl const ConstIndex<usize> for Matr4 {
-
-    type Output = f32;
-    #[inline]
-    fn const_index(&self, index: usize) -> &Self::Output {
-        &self.0.as_array()[index]
-    }
-}
-impl const ConstIndex<(usize, usize)> for Matr4 {
-    type Output = f32;
-    #[inline]
-    fn const_index(&self, index: (usize, usize)) -> &Self::Output {
-        self.const_index(index.1 + (4 * index.0))
-    }
-}
 impl IndexMut<(usize, usize)> for Matr4 {
     #[inline]
     fn index_mut(&mut self, index: (usize, usize)) -> &mut Self::Output {
@@ -627,7 +611,7 @@ impl Mul<Matr4> for Matr4 {
         let cols = rhs.as_column_vectors();
         for (row_idx, row) in rows.iter().enumerate() {
             for (col_idx, col) in cols.iter().enumerate() {
-                output[(row_idx, col_idx)] = (row.0 * col.0).reduce_sum();
+                output[(row_idx, col_idx)] = (row * col).reduce_sum();
             }
         }
         output
@@ -646,7 +630,7 @@ impl Mul<&Matr4> for Matr4 {
         let cols = rhs.as_column_vectors();
         for (row_idx, row) in rows.iter().enumerate() {
             for (col_idx, col) in cols.iter().enumerate() {
-                output[(row_idx, col_idx)] = (row.0 * col.0).reduce_sum();
+                output[(row_idx, col_idx)] = (row * col).reduce_sum();
             }
         }
         output
@@ -665,7 +649,7 @@ impl Mul<Matr4> for &Matr4 {
         let cols = rhs.as_column_vectors();
         for (row_idx, row) in rows.iter().enumerate() {
             for (col_idx, col) in cols.iter().enumerate() {
-                output[(row_idx, col_idx)] = (row.0 * col.0).reduce_sum();
+                output[(row_idx, col_idx)] = (row * col).reduce_sum();
             }
         }
         output
@@ -684,7 +668,7 @@ impl Mul<&Matr4> for &Matr4 {
         let cols = rhs.as_column_vectors();
         for (row_idx, row) in rows.iter().enumerate() {
             for (col_idx, col) in cols.iter().enumerate() {
-                output[(row_idx, col_idx)] = (row.0 * col.0).reduce_sum();
+                output[(row_idx, col_idx)] = (row * col).reduce_sum();
             }
         }
         output
@@ -714,16 +698,16 @@ impl Mul<Vert4> for Matr4 {
         // );
         let arr: &[f32; 16] = self.0.as_array();
 
-        let arr_0 = f32x4::from_slice(unsafe {arr.get_unchecked(0..4)}) * rhs.0;
-        let arr_1 = f32x4::from_slice(unsafe {arr.get_unchecked(4..8)}) * rhs.0;
-        let arr_2 = f32x4::from_slice(unsafe {arr.get_unchecked(8..12)}) * rhs.0;
-        let arr_3 = f32x4::from_slice(unsafe {arr.get_unchecked(12..16)}) * rhs.0;
-        Vert4(f32x4::from_array([
+        let arr_0 =Vert4::from_slice(unsafe {arr.get_unchecked(0..4)}) * &rhs;
+        let arr_1 = Vert4::from_slice(unsafe {arr.get_unchecked(4..8)}) * &rhs;
+        let arr_2 = Vert4::from_slice(unsafe {arr.get_unchecked(8..12)}) * &rhs;
+        let arr_3 = Vert4::from_slice(unsafe {arr.get_unchecked(12..16)}) * &rhs;
+        Vert4::from_array([
                     arr_0.reduce_sum(),
                     arr_1.reduce_sum(),
                     arr_2.reduce_sum(),
                     arr_3.reduce_sum(),
-        ]))
+        ])
     }
 }
 impl Mul<&Vert4> for Matr4 {
@@ -733,7 +717,7 @@ impl Mul<&Vert4> for Matr4 {
         let mut output: Vert4 = Vert4::new(0.0, 0.0, 0.0, 0.0);
         let rows = self.as_row_vectors();
         for (idx, row) in rows.iter().enumerate() {
-            output.0[idx] = (row.0 * rhs.0).reduce_sum();
+            output[idx] = (row * rhs).reduce_sum();
         }
         output
     }
@@ -745,7 +729,7 @@ impl Mul<Vert4> for &Matr4 {
         let mut output: Vert4 = Vert4::new(0.0, 0.0, 0.0, 0.0);
         let rows = self.as_row_vectors();
         for (idx, row) in rows.iter().enumerate() {
-            output.0[idx] = (row.0 * rhs.0).reduce_sum();
+            output[idx] = (row * &rhs).reduce_sum();
         }
         output
     }
@@ -757,7 +741,7 @@ impl Mul<&Vert4> for &Matr4 {
         let mut output: Vert4 = Vert4::new(0.0, 0.0, 0.0, 0.0);
         let rows = self.as_row_vectors();
         for (idx, row) in rows.iter().enumerate() {
-            output.0[idx] = (row.0 * rhs.0).reduce_sum();
+            output[idx] = (row * rhs).reduce_sum();
         }
         output
     }

@@ -26,14 +26,14 @@ mod subtracting {
 mod dot_product {
     #[test]
     fn two_vectors() {
-        use geometry::ops::Dot;
+        use geometry::vertex::Dot;
         let a = geometry::vector!(1.0, 2.0, 3.0);
         let b = geometry::vector!(2.0, 3.0, 4.0);
         assert_eq!(a.dot(b), 20.0);
     }
 }
 mod magnitude {
-    use geometry::ops::Mag;
+    use geometry::vertex::Mag;
     #[test]
     fn x_unit_vector() {
         let v = geometry::vux!();
@@ -61,7 +61,7 @@ mod magnitude {
     }
 }
 mod normalizing {
-    use geometry::ops::{Mag, Norm};
+    use geometry::vertex::{Mag, Norm};
     #[test]
     fn unit_1() {
         let v = geometry::vector!(4.0, 0.0, 0.0);
@@ -76,6 +76,18 @@ mod normalizing {
     fn unit_3() {
         let v = geometry::vector!(1.0, 2.0, 3.0);
         let norm = v.norm();
-        assert!(geometry::cmp::SortaEq::ehh_maybe(&norm.mag(), &1.0));
+        assert!(geometry::vertex::float_almost_eq(&norm.mag(), &1.0));
     }
+}
+#[test]
+fn the_cross_product_of_two_vectors() {
+    use geometry::vertex::Cross;
+    let a = geometry::vector!(1., 2., 3.);
+    let b = geometry::vector!(2., 3., 4.);
+
+    let v1 = Cross::cross(&a, &b);
+    assert_eq!(v1, geometry::vector!(-1., 2., -1.));
+
+    let v2 = Cross::cross(&b, &a);
+    assert_eq!(v2, geometry::vector!(1., -2., 1.));
 }
