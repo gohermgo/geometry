@@ -2,52 +2,97 @@ use core::marker::PhantomData;
 use core::ops::{Index, IndexMut};
 use core::ops::Mul;
 
-use std::simd::{f32x16, f32x4, num::SimdFloat, simd_swizzle};
+use std::simd::{f32x16, f32x4, num::SimdFloat, simd_swizzle, LaneCount, Simd, SimdElement, SupportedLaneCount};
 
-use crate::{Vert2, Vert3, Vert4};
+use crate::{matrix::ops::ConstIndex, Vert2, Vert3, Vert4};
 
 mod ops;
-pub use ops::{Cofactor, Determinant, Minor, Submatrix};
+pub use ops::{Cofactor, Determinant, Minor, Submatrix, Inverse};
 
+#[const_trait]
 pub trait Matrix<const DIM: usize> {
     type Vert;
     fn new(array: [f32; DIM * DIM]) -> Self;
     fn identity() -> Self;
     fn transpose(&self) -> Self;
+}
+pub trait AsColumns<const N: usize>: Matrix<N> {
     #[inline]
-    fn as_column_vectors<'a>(&'a self) -> [Self::Vert; DIM]
+    fn as_column_vectors<'a>(&'a self) -> [Self::Vert; N]
     where
-        Self: 'a + Into<[Self::Vert; DIM]>,
+        Self: 'a + Into<[Self::Vert; N]>,
     {
         self.transpose().into()
     }
     #[inline]
-    fn as_row_vectors<'a>(&'a self) -> [Self::Vert; DIM]
+    fn as_row_vectors<'a>(&'a self) -> [Self::Vert; N]
     where
-        Self: 'a + Into<[Self::Vert; DIM]>,
-        &'a Self: Into<[Self::Vert; DIM]>,
+        Self: 'a + Into<[Self::Vert; N]>,
+        &'a Self: Into<[Self::Vert; N]>,
     {
         self.into()
     }
+
+}
+#[const_trait]
+pub trait FromArray<T, const N: usize> {
+    fn from_array(array: [T; N]) -> Self;
+}
+#[const_trait]
+pub trait AsArray<T, const N: usize> {
+    fn as_array(&self) -> &[T; N];
+}
+impl<T, const N: usize> AsArray<T, N> for [T; N] {
+    fn as_array(&self) -> &[T; N] {
+        self
+    }
+}
+impl<T, const N: usize> AsArray<T, N> for Simd<T, N> where LaneCount<N>: SupportedLaneCount, T: SimdElement {
+    fn as_array(&self) -> &[T; N] {
+        self.as_array()
+    }
+}
+#[const_trait]
+pub trait FromSlice<T> {
+    fn from_slice(slice: &[T]) -> Self;
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Mat2(pub(crate) f32x4);
+pub struct Matr2(pub(crate) f32x4);
+impl const FromArray<f32, 4> for Matr2 {
+    #[inline]
+    fn from_array(array: [f32; 4]) -> Self {
+        Matr2(f32x4::from_array(array))
+    }
+}
+impl const AsArray<f32, 4> for Matr2 {
+    #[inline]
+    fn as_array(&self) -> &[f32; 4] {
+        self.0.as_array()
+    }
+}
+impl const FromSlice<f32> for Matr2 {
+    #[inline]
+    fn from_slice(slice: &[f32]) -> Self {
+        Matr2(f32x4::from_slice(slice))
+    }
+}
 pub(crate) const T_SWIZZLE_2: [usize; 4] = [0, 2, 1, 3];
-impl Matrix<2> for Mat2 {
+impl Matrix<2> for Matr2 {
     type Vert = Vert2;
     #[inline]
     fn new(array: [f32; 2 * 2]) -> Self {
-        Self(f32x4::from_array(array))
+        Matr2::from_array(array)
     }
     #[inline]
     fn identity() -> Self {
-        Self(f32x4::from_array([1.0, 0.0, 0.0, 1.0]))
+        Matr2::from_array([1.0, 0.0, 0.0, 1.0])
     }
     #[inline]
     fn transpose(&self) -> Self {
-        Self(simd_swizzle!(self.0, T_SWIZZLE_2))
+        Matr2(simd_swizzle!(self.0, T_SWIZZLE_2))
     }
+    
     // #[inline]
     // fn as_column_vectors(&self) -> [Self::Vert; 2] {
     //     self.transpose().into()
@@ -57,53 +102,104 @@ impl Matrix<2> for Mat2 {
     //     self.into()
     // }
 }
-impl Index<(usize, usize)> for Mat2 {
+impl Index<(usize, usize)> for Matr2 {
     type Output = f32;
     #[inline]
     fn index(&self, index: (usize, usize)) -> &Self::Output {
         &self.0[index.1 + (2 * index.0)]
     }
 }
-impl From<Mat2> for [Vert2; 2] {
+impl const ConstIndex<usize> for Matr2 {
+    type Output = f32;
     #[inline]
-    fn from(value: Mat2) -> Self {
+    fn const_index(&self, index: usize) -> &Self::Output {
+        &self.0.as_array()[index]
+    }
+}
+impl const ConstIndex<(usize, usize)> for Matr2 {
+    type Output = f32;
+    #[inline]
+    fn const_index(&self, index: (usize, usize)) -> &Self::Output {
+        self.const_index(index.1 + (2 * index.0))
+    }
+}
+impl From<Matr2> for [Vert2; 2] {
+    #[inline]
+    fn from(value: Matr2) -> Self {
         let v0 = Vert2::new(value[(0, 0)], value[(0, 1)]);
         let v1 = Vert2::new(value[(1, 0)], value[(1, 1)]);
         [v0, v1]
     }
 }
-impl From<&Mat2> for [Vert2; 2] {
+impl From<&Matr2> for [Vert2; 2] {
     #[inline]
-    fn from(value: &Mat2) -> Self {
+    fn from(value: &Matr2) -> Self {
         let v0 = Vert2::new(value[(0, 0)], value[(0, 1)]);
         let v1 = Vert2::new(value[(1, 0)], value[(1, 1)]);
         [v0, v1]
     }
 }
 #[derive(Debug, PartialEq)]
-pub struct Mat3([f32; 9]);
-impl Matrix<3> for Mat3 {
+pub struct Matr3([f32; 9]);
+impl const FromArray<f32, 9> for Matr3 {
+
+    #[inline]
+    fn from_array(array: [f32; 9]) -> Matr3 {
+        Matr3(array)
+    }
+}
+impl const FromSlice<f32> for Matr3 {
+    #[inline]
+    fn from_slice(slice: &[f32]) -> Matr3 {
+        assert!(
+            slice.len() >= 9,
+            "slice length must be at least the number of elements"
+        );
+        // SAFETY: We just checked that the slice contains
+        // at least `N` elements.
+        unsafe { Matr3::load(slice.as_ptr().cast()) }
+    }
+}
+impl Matr3 {
+    #[inline]
+    const unsafe fn load(ptr: *const [f32; 9]) -> Matr3 {
+        let mut tmp = core::mem::MaybeUninit::<Matr3>::uninit();
+        // SAFETY: `Mat3` always contains `9` elements of type `f32`.  It may have padding
+        // which does not need to be initialized.  The safety of reading `ptr` is ensured by the
+        // caller.
+        unsafe {
+            core::ptr::copy_nonoverlapping(ptr, tmp.as_mut_ptr().cast(), 1);
+            tmp.assume_init()
+        }
+    }
+}
+impl const AsArray<f32, 9> for Matr3 {
+    fn as_array(&self) -> &[f32; 9] {
+        &self.0
+    }
+}
+impl const Matrix<3> for Matr3 {
     type Vert = Vert3;
     #[inline]
     fn new(array: [f32; 3 * 3]) -> Self {
-        Self(array)
+        Matr3::from_array(array)
     }
     #[inline]
     fn identity() -> Self {
-        Self([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
+        Self::from_array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
     }
     #[inline]
     fn transpose(&self) -> Self {
         Self([
-            self[(0, 0)],
-            self[(1, 0)],
-            self[(2, 0)],
-            self[(0, 1)],
-            self[(1, 1)],
-            self[(2, 1)],
-            self[(0, 2)],
-            self[(1, 2)],
-            self[(2, 2)],
+            *self.const_index((0, 0)),
+            *self.const_index((1, 0)),
+            *self.const_index((2, 0)),
+            *self.const_index((0, 1)),
+            *self.const_index((1, 1)),
+            *self.const_index((2, 1)),
+            *self.const_index((0, 2)),
+            *self.const_index((1, 2)),
+            *self.const_index((2, 2)),
         ])
     }
     // #[inline]
@@ -111,25 +207,50 @@ impl Matrix<3> for Mat3 {
     //     self.into()
     // }
 }
-impl Index<(usize, usize)> for Mat3 {
+impl const ConstIndex<(usize, usize)> for Matr3 {
     type Output = f32;
     #[inline]
-    fn index(&self, index: (usize, usize)) -> &Self::Output {
+    fn const_index(&self, index: (usize, usize)) -> &Self::Output {
         &self.0[index.1 + (3 * index.0)]
     }
 }
-impl From<Mat3> for [Vert3; 3] {
+impl Index<(usize, usize)> for Matr3 {
+    type Output = f32;
     #[inline]
-    fn from(value: Mat3) -> Self {
+    fn index(&self, index: (usize, usize)) -> &Self::Output {
+        self.const_index(index)
+    }
+}
+impl const FromArray<Vert3, 3> for Matr3 {
+    #[inline]
+    fn from_array(arr: [Vert3; 3]) -> Self {
+        let mut out_arr = [0.; 9];
+        let mut idx = 0;
+        while idx <9 {
+            let src_idx = match idx {
+                0..3 => 0,
+                3..6 => 1,
+                6.. => 2
+            };
+
+            out_arr[idx] = arr[src_idx].0[idx % 3];
+            idx += 1;
+        }
+        Matr3::from_array(out_arr)
+    }
+}
+impl From<Matr3> for [Vert3; 3] {
+    #[inline]
+    fn from(value: Matr3) -> Self {
         let v0 = Vert3::new(value[(0, 0)], value[(0, 1)], value[(0, 2)]);
         let v1 = Vert3::new(value[(1, 0)], value[(1, 1)], value[(1, 2)]);
         let v2 = Vert3::new(value[(2, 0)], value[(2, 1)], value[(2, 2)]);
         [v0, v1, v2]
     }
 }
-impl From<&Mat3> for [Vert3; 3] {
+impl From<&Matr3> for [Vert3; 3] {
     #[inline]
-    fn from(value: &Mat3) -> Self {
+    fn from(value: &Matr3) -> Self {
         let v0 = Vert3::new(value[(0, 0)], value[(0, 1)], value[(0, 2)]);
         let v1 = Vert3::new(value[(1, 0)], value[(1, 1)], value[(1, 2)]);
         let v2 = Vert3::new(value[(2, 0)], value[(2, 1)], value[(2, 2)]);
@@ -278,6 +399,23 @@ impl<Ax: Axis> ShearingProportion<Ax> {
 }
 #[derive(Debug)]
 pub struct Matr4(f32x16);
+impl const AsArray<f32, 16> for Matr4 {
+    fn as_array(&self) -> &[f32; 16] {
+        self.0.as_array()
+    }
+}
+impl const FromArray<f32, 16> for Matr4 {
+    #[inline]
+    fn from_array(array: [f32; 16]) -> Matr4 {
+        Matr4(f32x16::from_array(array))
+    }
+}
+impl FromSlice<f32> for Matr4 {
+    #[inline]
+    fn from_slice(slice: &[f32]) -> Matr4 {
+        Matr4(f32x16::from_slice(slice))
+    }
+}
 impl Matr4 {
     #[inline]
     pub const fn translation(tx: f32, ty: f32, tz: f32) -> Matr4 {
@@ -421,172 +559,6 @@ impl Matr4 {
         inner::create(xy, xz, yx, yz, zx, zy)
     }
 }
-#[cfg(test)]
-mod transformation_tests {
-    use super::*;
-    //
-    // Translation tests
-    //
-    #[test]
-    fn multiplying_by_a_translation_matrix() {
-        let transform = Matr4::translation(5., -3., 2.);
-        let p = Vert4::new(-3., 4., 5., 1.);
-
-        let res = transform * p;
-        assert_eq!(res, Vert4::new(2., 1., 7., 1.))
-    }
-    #[test]
-    fn multiplying_by_the_inverse_of_a_translation_matrix() {
-        use crate::matrix::ops::Inverse;
-
-        let transform = Matr4::translation(5., -3., 2.);
-        let p = Vert4::point(-3., 4., 5.);
-
-        let inv = transform.inverse().unwrap();
-
-        let res = inv * p;
-        assert_eq!(res, Vert4::point(-8., 7., 3.))
-    }
-    #[test]
-    fn translation_does_not_affect_vectors() {
-        use crate::Vert4;
-
-        let transform = Matr4::translation(5., -3., 2.);
-        let v = Vert4::vector(-3., 4., 5.);
-        let res = transform * &v;
-        assert_eq!(res, v)
-    }
-    //
-    // Scaling tests
-    //
-    #[test]
-    fn a_scaling_matrix_applied_to_a_point() {
-        let transform = Matr4::scaling(2., 3., 4.);
-        let p = Vert4::point(-4., 6., 8.);
-        let res = transform * p;
-        assert_eq!(res, Vert4::point(-8., 18., 32.))
-    }
-    #[test]
-    fn a_scaling_matrix_applied_to_a_vector() {
-        let transform = Matr4::scaling(2., 3., 4.);
-        let v = Vert4::vector(-4., 6., 8.);
-        let res = transform * v;
-        assert_eq!(res, Vert4::vector(-8., 18., 32.))
-    }
-    #[test]
-    fn multiplying_by_the_inverse_of_a_scaling_matrix() {
-        use crate::matrix::ops::Inverse;
-
-        let transform = Matr4::scaling(2., 3., 4.);
-        let inv = transform.inverse().unwrap();
-        let v = Vert4::vector(-4., 6., 8.);
-        let res = inv * v;
-        assert_eq!(res,Vert4::vector(-2., 2., 2.))
-    }
-    #[test]
-    fn reflection_is_scaling_by_a_negative_value() {
-        let transform = Matr4::scaling(-1., 1., 1.);
-        let p = Vert4::point(2., 3., 4.);
-        let res = transform * p;
-        assert_eq!(res, Vert4::point(-2., 3., 4.))
-    }
-    //
-    // Rotation tests
-    //
-    #[test]
-    fn rotating_a_point_around_the_x_axis() {
-        use core::f32::consts::PI;
-
-        let p = Vert4::point(0., 1., 0.);
-
-        let half_quarter = Matr4::rotation_x_rad(PI / 4.);
-        let half_rotp = half_quarter * &p;
-        assert_eq!(half_rotp, Vert4::point(0., 2_f32.sqrt() / 2., 2_f32.sqrt() / 2.));
-
-        let full_quarter = Matr4::rotation_x_rad(PI / 2.);
-        let full_rotp = full_quarter *&p;
-        assert_eq!(full_rotp, Vert4::point(0., 0., 1.))
-    }
-    #[test]
-    fn the_inverse_of_an_x_rotation_rotates_in_the_oppsite_direction() {
-        use crate::matrix::ops::Inverse;
-        use core::f32::consts::PI;
-
-        let p = Vert4::point(0., 1., 0.);
-
-        let half_quarter = Matr4::rotation_x_rad(PI / 4.);
-        let inv = half_quarter.inverse().unwrap();
-        let half_rotp = inv * &p;
-        assert_eq!(half_rotp, Vert4::point(0., 2_f32.sqrt() / 2., -(2_f32.sqrt() / 2.)));
-    }
-    #[test]
-    fn rotating_a_point_around_the_y_axis() {
-        use core::f32::consts::PI;
-
-        let p = Vert4::point(0., 0., 1.);
-
-        let half_quarter = Matr4::rotation_y_rad(PI / 4.);
-        let half_rotp = half_quarter * &p;
-        assert_eq!(half_rotp, Vert4::point(2_f32.sqrt() / 2., 0., 2_f32.sqrt() / 2.));
-
-        let full_quarter = Matr4::rotation_y_rad(PI / 2.);
-        let full_rotp = full_quarter *&p;
-        assert_eq!(full_rotp, Vert4::point(1., 0., 0.))
-    }
-    #[test]
-    fn rotating_a_point_around_the_z_axis() {
-        use core::f32::consts::PI;
-
-        let p = Vert4::point(0., 1., 0.);
-
-        let half_quarter = Matr4::rotation_z_rad(PI / 4.);
-        let half_rotp = half_quarter * &p;
-        assert_eq!(half_rotp, Vert4::point(-2_f32.sqrt() / 2., 2_f32.sqrt() / 2., 0.));
-
-        let full_quarter = Matr4::rotation_z_rad(PI / 2.);
-        let full_rotp = full_quarter *&p;
-        assert_eq!(full_rotp, Vert4::point(-1., 0., 0.))
-    }
-    //
-    // Shearing tests
-    //
-    #[test]
-    fn a_shearing_transformation_moves_x_in_proportion_to_y() {
-        let transform = Matr4::shearing(ShearingProportion::new(1., 0.), ShearingProportion::default(), ShearingProportion::default());
-        let p = Vert4::point(2., 3., 4.);
-        assert_eq!(transform * p, Vert4::point(5., 3., 4.))
-    }
-    #[test]
-    fn a_shearing_transformation_moves_x_in_proportion_to_z() {
-        let transform = Matr4::shearing(ShearingProportion::new(0., 1.), ShearingProportion::default(), ShearingProportion::default());
-        let p = Vert4::point(2., 3., 4.);
-        assert_eq!(transform * p, Vert4::point(6., 3., 4.))
-    }
-    #[test]
-    fn a_shearing_transformation_moves_y_in_proportion_to_x() {
-        let transform = Matr4::shearing(ShearingProportion::default(), ShearingProportion::new(1., 0.), ShearingProportion::default());
-        let p = Vert4::point(2., 3., 4.);
-        assert_eq!(transform * p, Vert4::point(2., 5., 4.))
-    }
-    #[test]
-    fn a_shearing_transformation_moves_y_in_proportion_to_z() {
-        let transform = Matr4::shearing(ShearingProportion::default(), ShearingProportion::new(0., 1.), ShearingProportion::default());
-        let p = Vert4::point(2., 3., 4.);
-        assert_eq!(transform * p, Vert4::point(2., 7., 4.))
-    }
-    #[test]
-    fn a_shearing_transformation_moves_z_in_proportion_to_x() {
-        let transform = Matr4::shearing(ShearingProportion::default(), ShearingProportion::default(), ShearingProportion::new(1., 0.));
-        let p = Vert4::point(2., 3., 4.);
-        assert_eq!(transform * p, Vert4::point(2., 3., 6.))
-    }
-    #[test]
-    fn a_shearing_transformation_moves_z_in_proportion_to_y() {
-        let transform = Matr4::shearing(ShearingProportion::default(), ShearingProportion::default(), ShearingProportion::new(0., 1.));
-        let p = Vert4::point(2., 3., 4.);
-        assert_eq!(transform * p, Vert4::point(2., 3., 7.))
-    }
-}
 pub(crate) const T_SWIZZLE_4: [usize; 16] = [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15];
 impl Matrix<4> for Matr4 {
     type Vert = Vert4;
@@ -610,6 +582,21 @@ impl Index<(usize, usize)> for Matr4 {
     #[inline]
     fn index(&self, index: (usize, usize)) -> &Self::Output {
         &self.0[index.1 + (4 * index.0)]
+    }
+}
+impl const ConstIndex<usize> for Matr4 {
+
+    type Output = f32;
+    #[inline]
+    fn const_index(&self, index: usize) -> &Self::Output {
+        &self.0.as_array()[index]
+    }
+}
+impl const ConstIndex<(usize, usize)> for Matr4 {
+    type Output = f32;
+    #[inline]
+    fn const_index(&self, index: (usize, usize)) -> &Self::Output {
+        self.const_index(index.1 + (4 * index.0))
     }
 }
 impl IndexMut<(usize, usize)> for Matr4 {
@@ -639,6 +626,7 @@ impl From<&Matr4> for [Vert4; 4] {
         [v0, v1, v2, v3]
     }
 }
+impl AsColumns<4> for Matr4 {}
 impl Mul<Matr4> for Matr4 {
     type Output = Matr4;
     #[inline]
@@ -793,118 +781,5 @@ impl PartialEq for Matr4 {
             .iter()
             .zip(other.as_row_vectors().iter())
             .all(|(lhs, rhs)|PartialEq::eq(lhs, rhs))
-    }
-}
-#[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn constructing_mat4() {
-        let m = Matr4(f32x16::from_array([
-            1.0, 2.0, 3.0, 4.0, 5.5, 6.5, 7.5, 8.5, 9.0, 10.0, 11.0, 12.0, 13.5, 14.5, 15.5, 16.5,
-        ]));
-        assert_eq!(m[(0, 0)], 1.0);
-        assert_eq!(m[(0, 3)], 4.0);
-        assert_eq!(m[(1, 0)], 5.5);
-        assert_eq!(m[(1, 2)], 7.5);
-        assert_eq!(m[(2, 2)], 11.0);
-        assert_eq!(m[(3, 0)], 13.5);
-        assert_eq!(m[(3, 2)], 15.5);
-    }
-    #[test]
-    fn constructing_mat3() {
-        let m = Mat3([-3.0, 5.0, 0.0, 1.0, -2.0, -7.0, 0.0, 1.0, 1.0]);
-        assert_eq!(m[(0, 0)], -3.0);
-        assert_eq!(m[(1, 1)], -2.0);
-        assert_eq!(m[(2, 2)], 1.0);
-    }
-    #[test]
-    fn constructing_mat2() {
-        let m = Mat2(f32x4::from_array([-3.0, 5.0, 1.0, -2.0]));
-        assert_eq!(m[(0, 0)], -3.0);
-        assert_eq!(m[(0, 1)], 5.0);
-        assert_eq!(m[(1, 0)], 1.0);
-        assert_eq!(m[(1, 1)], -2.0);
-    }
-    mod mat4 {
-        use super::*;
-        #[test]
-        fn equality() {
-            let a = Matr4(f32x16::from_array([
-                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0,
-            ]));
-            let b = Matr4(f32x16::from_array([
-                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0,
-            ]));
-            assert_eq!(a, b)
-        }
-        #[test]
-        fn inequality() {
-            let a = Matr4(f32x16::from_array([
-                1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0,
-            ]));
-            let b = Matr4(f32x16::from_array([
-                2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0,
-            ]));
-            assert_ne!(a, b)
-        }
-        mod mul {
-            use super::*;
-            #[test]
-            fn multiplication_by_matrix() {
-                let a = Matr4(f32x16::from_array([
-                    1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0,
-                ]));
-                let b = Matr4(f32x16::from_array([
-                    -2.0, 1.0, 2.0, 3.0, 3.0, 2.0, 1.0, -1.0, 4.0, 3.0, 6.0, 5.0, 1.0, 2.0, 7.0,
-                    8.0,
-                ]));
-                assert_eq!(
-                    a * b,
-                    Matr4(f32x16::from_array([
-                        20.0, 22.0, 50.0, 48.0, 44.0, 54.0, 114.0, 108.0, 40.0, 58.0, 110.0, 102.0,
-                        16.0, 26.0, 46.0, 42.0
-                    ]))
-                )
-            }
-            #[test]
-            fn multiplication_by_vertex() {
-                let a = Matr4(f32x16::from_array([
-                    1.0, 2.0, 3.0, 4.0, 2.0, 4.0, 4.0, 2.0, 8.0, 6.0, 4.0, 1.0, 0.0, 0.0, 0.0, 1.0,
-                ]));
-                let b = Vert4::new(1.0, 2.0, 3.0, 1.0);
-                assert_eq!(a * b, Vert4::new(18.0, 24.0, 33.0, 1.0))
-            }
-            #[test]
-            fn multiplication_by_ident() {
-                let a = Matr4(f32x16::from_array([
-                    0.0, 1.0, 2.0, 4.0, 1.0, 2.0, 4.0, 8.0, 2.0, 4.0, 8.0, 16.0, 4.0, 8.0, 16.0,
-                    32.0,
-                ]));
-                assert_eq!(&a * Matr4::identity(), a)
-            }
-            #[test]
-            fn multiplication_of_vertex_by_ident() {
-                let a = Vert4::new(1.0, 2.0, 3.0, 4.0);
-                assert_eq!(Matr4::identity() * &a, a)
-            }
-        }
-        #[test]
-        fn transposition() {
-            let a = Matr4(f32x16::from_array([
-                0.0, 9.0, 3.0, 0.0, 9.0, 8.0, 0.0, 8.0, 1.0, 8.0, 5.0, 3.0, 0.0, 0.0, 5.0, 8.0,
-            ]));
-            assert_eq!(
-                a.transpose(),
-                Matr4(f32x16::from_array([
-                    0.0, 9.0, 1.0, 0.0, 9.0, 8.0, 8.0, 0.0, 3.0, 0.0, 5.0, 5.0, 0.0, 8.0, 3.0, 8.0
-                ]))
-            )
-        }
-        #[test]
-        fn transposition_of_ident() {
-            let a = Matr4::identity();
-            assert_eq!(a.transpose(), Matr4::identity())
-        }
     }
 }

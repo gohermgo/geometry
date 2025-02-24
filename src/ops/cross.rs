@@ -20,7 +20,7 @@ impl Cross<Vert4> for Vert4 {
         let temp_0: f32x4 = simd_swizzle!(self.0, CROSS_SWIZZLE_1);
         let temp_1: f32x4 = simd_swizzle!(rhs.0, CROSS_SWIZZLE_0);
         let prod_1: f32x4 = temp_0 * temp_1;
-        Self((prod_0 - prod_1).into())
+        Self(prod_0 - prod_1)
     }
 }
 impl Cross<Vert4> for &Vert4 {
@@ -34,7 +34,7 @@ impl Cross<Vert4> for &Vert4 {
         let temp_0: f32x4 = simd_swizzle!(self.0, CROSS_SWIZZLE_1);
         let temp_1: f32x4 = simd_swizzle!(rhs.0, CROSS_SWIZZLE_0);
         let prod_1: f32x4 = temp_0 * temp_1;
-        Vert4((prod_0 - prod_1).into())
+        Vert4(prod_0 - prod_1)
     }
 }
 impl Cross<&Vert4> for Vert4 {
@@ -48,7 +48,7 @@ impl Cross<&Vert4> for Vert4 {
         let temp_0: f32x4 = simd_swizzle!(self.0, CROSS_SWIZZLE_1);
         let temp_1: f32x4 = simd_swizzle!(rhs.0, CROSS_SWIZZLE_0);
         let prod_1: f32x4 = temp_0 * temp_1;
-        Self((prod_0 - prod_1).into())
+        Self(prod_0 - prod_1)
     }
 }
 impl Cross<&Vert4> for &Vert4 {
@@ -62,7 +62,7 @@ impl Cross<&Vert4> for &Vert4 {
         let temp_0: f32x4 = simd_swizzle!(self.0, CROSS_SWIZZLE_1);
         let temp_1: f32x4 = simd_swizzle!(rhs.0, CROSS_SWIZZLE_0);
         let prod_1: f32x4 = temp_0 * temp_1;
-        Vert4((prod_0 - prod_1).into())
+        Vert4(prod_0 - prod_1)
     }
 }
 // pub trait CrossAssign<Rhs: ?Sized> {

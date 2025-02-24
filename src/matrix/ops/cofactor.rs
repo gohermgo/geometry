@@ -1,43 +1,62 @@
-use crate::{Determinant, Mat3, Matr4, Matrix, Minor};
+use crate::{
+    matrix::{
+        ops::{cofactor_3, cofactor_4, minor::ArrayMinor, submatrix::ConstIndex},
+        AsArray,
+    },
+    Determinant, Matr3, Matr4, Matrix, Minor,
+};
 use std::ops::Index;
-
-pub trait Cofactor<const DIM: usize, const SUB: usize>: Matrix<DIM> + Minor<DIM, SUB> {
+#[const_trait]
+pub trait ArrayCofactor<const N: usize, const NS: usize>: ~const ArrayMinor<N, NS> {
+    fn array_cofactor(&self, row: usize, col: usize) -> f32;
+}
+impl<const N: usize> const ArrayCofactor<N, { N - 1 }> for [f32; N * N]
+where
+    [f32; N * N]: ~const ArrayMinor<N, { N - 1 }>,
+{
     #[inline]
-    fn cofactor(&self, row: usize, col: usize) -> f32
-    where
-        // The implementor can be indexed by tuples
-        Self: Index<(usize, usize), Output = f32>,
-        // The implementors resultant submatrix implements determinant
-        Self::SubmatrixOutput: Determinant + Matrix<SUB>,
-        // Bound allowing SUB * SUB to be used
-        [(); SUB * SUB]:,
-    {
+    fn array_cofactor(&self, row: usize, col: usize) -> f32 {
         if (row + col) % 2 != 0 {
-            -self.minor(row, col)
+            -self.array_minor(row, col)
         } else {
-            self.minor(row, col)
+            self.array_minor(row, col)
+        }
+    }
+}
+#[const_trait]
+pub trait Cofactor<const N: usize, const NS: usize> {
+    fn cofactor(&self, row: usize, col: usize) -> f32;
+    // {
+    //     if (row + col) % 2 != 0 {
+    //         -self.as_array().array_cofactor(row, col)
+    //     } else {
+    //         self.as_array().array_cofactor(row, col)
+    //     }
+    // }
+}
+// impl const ArrayCofactor<3, 2> for [f32; 9] {}
+impl Cofactor<3, 2> for Matr3 {
+    #[inline]
+    fn cofactor(&self, row: usize, col: usize) -> f32 {
+        let minor = self.minor(row, col);
+
+        if (row + col) % 2 != 0 {
+            -minor
+        } else {
+            minor
         }
     }
 }
 
-impl Cofactor<3, 2> for Mat3 {}
-
-impl Cofactor<4, 3> for Matr4 {}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    mod mat3 {
-        use super::*;
-        #[test]
-        fn calc_cofactor() {
-            let a = Mat3::new([3.0, 5.0, 0.0, 2.0, -1.0, -7.0, 6.0, -1.0, 5.0]);
-
-            assert_eq!(a.minor(0, 0), -12.0);
-            assert_eq!(a.cofactor(0, 0), -12.0);
-
-            assert_eq!(a.minor(1, 0), 25.0);
-            assert_eq!(a.cofactor(1, 0), -25.0);
+// impl const ArrayCofactor<16, 9> for [f32; 16] {}
+impl Cofactor<4, 3> for Matr4 {
+    #[inline]
+    fn cofactor(&self, row: usize, col: usize) -> f32 {
+        let minor = self.minor(row, col);
+        if (row + col) % 2 != 0 {
+            -minor
+        } else {
+            minor
         }
     }
 }

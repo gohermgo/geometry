@@ -14,11 +14,6 @@ macro_rules! simd {
         simd_n!($x, $y, $z, $w)
     };
 }
-macro_rules! tuple {
-    ($x:expr, $y:expr, $z:expr, $w:expr) => {
-        Vert4::new($x, $y, $z, $w)
-    };
-}
 macro_rules! tuple_4 {
     ($x:expr) => {
         tuple!($x, $x, $x, $x)
@@ -34,11 +29,11 @@ macro_rules! point_3 {
         point!($x, $x, $x)
     };
 }
-macro_rules! vector {
-    ($x:expr, $y:expr, $z:expr) => {
-        Vector::new($x, $y, $z)
-    };
-}
+// macro_rules! vector {
+//     ($x:expr, $y:expr, $z:expr) => {
+//         Vector::new($x, $y, $z)
+//     };
+// }
 macro_rules! vector_3 {
     ($x:expr) => {
         vector!($x, $x, $x)

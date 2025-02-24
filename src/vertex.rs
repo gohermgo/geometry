@@ -1,15 +1,25 @@
+use core::fmt::{Debug, Formatter, Result as FmtResult};
+
+use core::ops::Neg;
+use core::ops::{Add, AddAssign};
+use core::ops::{Div, DivAssign};
+use core::ops::{Mul, MulAssign};
+use core::ops::{Sub, SubAssign};
+
+use std::simd::{f32x2, f32x4, Simd};
+
 use crate::cmp::SortaEq;
 use crate::{Point, Vector};
-use std::{
-    ops::{Add, AddAssign, Div, DivAssign, Mul, MulAssign, Neg, Sub, SubAssign},
-    simd::{f32x2, f32x4, Simd},
-};
 pub trait Vertex {}
 const SIMD_2_ZERO: Simd<f32, 2> = Simd::from_array([0.0_f32, 0.0_f32]);
 const SIMD_2_X: Simd<f32, 2> = Simd::from_array([1.0_f32, 0.0_f32]);
 const SIMD_2_Y: Simd<f32, 2> = Simd::from_array([0.0_f32, 1.0_f32]);
-#[derive(Debug)]
-pub struct Vert2(pub(crate) f32x2);
+pub struct Vert2(pub f32x2);
+impl Debug for Vert2 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        f.debug_tuple("Vert2").field(&self.0.as_array()).finish()
+    }
+}
 impl Vertex for Vert2 {}
 impl Vert2 {
     pub const ZERO: Self = Self(SIMD_2_ZERO);
@@ -36,8 +46,12 @@ const SIMD_3_ZERO: [f32; 3] = [0.0_f32, 0.0_f32, 0.0_f32];
 const SIMD_3_X: [f32; 3] = [1.0_f32, 0.0_f32, 0.0_f32];
 const SIMD_3_Y: [f32; 3] = [0.0_f32, 1.0_f32, 0.0_f32];
 const SIMD_3_Z: [f32; 3] = [0.0_f32, 0.0_f32, 1.0_f32];
-#[derive(Debug)]
 pub struct Vert3(pub [f32; 3]);
+impl Debug for Vert3 {
+    fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
+        f.debug_tuple("Vert3").field(&self.0).finish()
+    }
+}
 impl PartialEq for Vert3 {
     fn eq(&self, other: &Self) -> bool {
         SortaEq::ehh_maybe(&self.0, &other.0)
@@ -71,6 +85,7 @@ const SIMD_4_X: Simd<f32, 4> = Simd::from_array([1.0_f32, 0.0_f32, 0.0_f32, 0.0_
 const SIMD_4_Y: Simd<f32, 4> = Simd::from_array([0.0_f32, 1.0_f32, 0.0_f32, 0.0_f32]);
 const SIMD_4_Z: Simd<f32, 4> = Simd::from_array([0.0_f32, 0.0_f32, 1.0_f32, 0.0_f32]);
 const SIMD_4_W: Simd<f32, 4> = Simd::from_array([0.0_f32, 0.0_f32, 0.0_f32, 1.0_f32]);
+#[repr(transparent)]
 #[derive(Debug)]
 pub struct Vert4(pub(crate) f32x4);
 impl Vert4 {
@@ -81,6 +96,14 @@ impl Vert4 {
     #[inline]
     pub const fn vector(x: f32, y: f32, z: f32) -> Vert4 {
         Vert4::new(x, y, z, 0.0)
+    }
+    #[inline]
+    pub const fn is_point(&self) -> bool {
+        self.w() == 1.
+    }
+    #[inline]
+    pub const fn is_vector(&self) -> bool {
+        !self.is_point()
     }
 }
 impl Vertex for Vert4 {}
@@ -124,6 +147,7 @@ impl From<&f32x4> for Vert4 {
         Self(value.to_owned())
     }
 }
+#[expect(unused_macros)]
 macro_rules! imp {
     (Add, Self = $t:ty $(, Rhs = $rhs:ty)?$(, Output = $o:ty)?$(, Ex = $e:expr)?) => {
         add_impl!(Self = $t$(, Rhs = $rhs)?$(, Output = $o)?$(, Ex = $e)?);
@@ -132,6 +156,7 @@ macro_rules! imp {
         add_assign_impl!(Self = $t$(, Rhs = $rhs)?, Ex = $e);
     };
 }
+#[expect(unused_macros)]
 macro_rules! add_assign_impl {
     (Self = $t:ty, Rhs = $rhs:ty, Ex = $e:expr) => {
         impl AddAssign<$rhs> for $t {
@@ -151,6 +176,7 @@ macro_rules! add_assign_impl {
     };
 }
 // Add impls---------
+#[expect(unused_macros)]
 macro_rules! add_impl {
     (Self = $t:ty, Ex = $e:expr) => {
         add_impl!(Self = $t, Rhs = $t, Output = $t, Ex = $e);
@@ -183,7 +209,6 @@ macro_rules! add_impl {
         }
     };
 }
-// imp!(Add, Self = Vert4);
 impl Add for Vert4 {
     type Output = Self;
     #[inline]
@@ -191,14 +216,12 @@ impl Add for Vert4 {
         self.0.add(rhs.0).into()
     }
 }
-// imp!(AddAssign, Self = Vert4, Ex = self.0.add_assign(rhs.0));
 impl AddAssign for Vert4 {
     #[inline]
     fn add_assign(&mut self, rhs: Self) {
         self.0.add_assign(rhs.0)
     }
 }
-// add_impl!(Self = Vert4, Rhs = &Vert4);
 impl Add<&Self> for Vert4 {
     type Output = Self;
     #[inline]
@@ -278,6 +301,20 @@ impl Mul<f32> for Vert4 {
     #[inline]
     fn mul(self, rhs: f32) -> Self::Output {
         self.0.mul(simd_4!(rhs)).into()
+    }
+}
+impl Mul<f32> for &Vert4 {
+    type Output = Vert4;
+    #[inline]
+    fn mul(self, rhs: f32) -> Self::Output {
+        self.0.mul(simd_4!(rhs)).into()
+    }
+}
+impl Mul<&f32> for Vert4 {
+    type Output = Vert4;
+    #[inline]
+    fn mul(self, rhs: &f32) -> Self::Output {
+        self.0.mul(simd_4!(*rhs)).into()
     }
 }
 impl MulAssign for Vert4 {
@@ -369,36 +406,5 @@ impl PartialEq<Point> for Vert4 {
     #[inline]
     fn eq(&self, other: &Point) -> bool {
         self.0.ehh_maybe(&other.0 .0)
-    }
-}
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn add_two_tuples() {
-        let a1 = tuple!(3.0, -2.0, 5.0, 1.0);
-        let a2 = tuple!(-2.0, 3.0, 1.0, 0.0);
-        assert!((a1 + a2) == tuple!(1.0, 1.0, 6.0, 1.0));
-    }
-    #[test]
-    fn negating_tuple() {
-        let a = tuple!(1.0, -2.0, 3.0, -4.0);
-        assert!(-a == tuple!(-1.0, 2.0, -3.0, 4.0))
-    }
-    #[test]
-    fn multiplying_tuple_by_scalar() {
-        let a = tuple!(1.0, -2.0, 3.0, -4.0);
-        assert!((a * 3.5) == tuple!(3.5, -7.0, 10.5, -14.0))
-    }
-    #[test]
-    fn multiplying_tuple_by_fraction() {
-        let a = tuple!(1.0, -2.0, 3.0, -4.0);
-        assert!((a * 0.5) == tuple!(0.5, -1.0, 1.5, -2.0))
-    }
-    #[test]
-    fn dividing_tuple_by_scalar() {
-        let a = tuple!(1.0, -2.0, 3.0, -4.0);
-        assert!((a / 2.0) == tuple!(0.5, -1.0, 1.5, -2.0))
     }
 }

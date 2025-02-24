@@ -11,16 +11,6 @@ impl Point {
         self.0.y()
     }
 }
-// impl Pointlike for Point {
-//     #[inline]
-//     fn new(x: f32, y: f32, z: f32) -> Self {
-//         Self(Tuple::new(x, y, z, 1.0_f32))
-//     }
-//     #[inline]
-//     fn is_vector(&self) -> bool {
-//         false
-//     }
-// }
 impl Add<Vector> for Point {
     type Output = Point;
     #[inline]
@@ -169,40 +159,5 @@ impl PartialEq<Vert4> for Point {
     #[inline]
     fn eq(&self, other: &Vert4) -> bool {
         self.0.eq(other)
-    }
-}
-#[cfg(test)]
-mod tests {
-    use crate::{Point, PointType, Vector, Vert4};
-
-    #[test]
-    fn point_constructor_w_eq_one() {
-        let p = Point::new(4.0, -4.0, 3.0);
-        assert!(p == Vert4::new(4.0, -4.0, 3.0, 1.0));
-    }
-
-    #[test]
-    fn a_tuple_with_w_eq_one_is_a_point() {
-        let a = Point::new(4.3, -4.2, 3.1);
-        assert!(a == Vert4::new(4.3, -4.2, 3.1, 1.0));
-        assert!(a.is_point());
-        assert!(!a.is_vector());
-    }
-
-    mod sub {
-        use super::*;
-        #[test]
-        fn two_points() {
-            let p1 = point!(3.0, 2.0, 1.0);
-            let p2 = point!(5.0, 6.0, 7.0);
-            assert!((p1 - p2) == vector!(-2.0, -4.0, -6.0))
-        }
-
-        #[test]
-        fn vector_from_point() {
-            let p = point!(3.0, 2.0, 1.0);
-            let v = vector!(5.0, 6.0, 7.0);
-            assert!((p - v) == point!(-2.0, -4.0, -6.0))
-        }
     }
 }

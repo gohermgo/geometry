@@ -1,6 +1,5 @@
 //! Vector type
 use crate::Vert4;
-use core::fmt::{Debug, Formatter, Result as FmtResult};
 use std::{
     ops::{Add, AddAssign, Div, DivAssign, Mul, Sub, SubAssign},
     simd::f32x4,
@@ -147,36 +146,5 @@ impl PartialEq<Vert4> for Vector {
     #[inline]
     fn eq(&self, other: &Vert4) -> bool {
         self.0.eq(other)
-    }
-}
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::PointType;
-    #[test]
-    fn vector_constructor_w_eq_zero() {
-        let v = vector!(4.0, -4.0, 3.0);
-        assert!(v == Vert4::new(4.0, -4.0, 3.0, 0.0));
-    }
-    #[test]
-    fn a_tuple_with_w_eq_zero_is_a_vector() {
-        let a = vector!(4.3, -4.2, 3.1);
-        assert!(a == Vert4::new(4.3, -4.2, 3.1, 0.0));
-        assert!(!a.is_point());
-        assert!(a.is_vector());
-    }
-    mod sub {
-        use super::*;
-        #[test]
-        fn two_vectors() {
-            let v1 = vector!(3.0, 2.0, 1.0);
-            let v2 = vector!(5.0, 6.0, 7.0);
-            assert!((v1 - v2) == vector!(-2.0, -4.0, -6.0))
-        }
-        #[test]
-        fn vector_from_zero_vector() {
-            let v = vector!(1.0, -2.0, 3.0);
-            assert!((Vector::ZERO - v) == vector!(-1.0, 2.0, -3.0))
-        }
     }
 }

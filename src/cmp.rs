@@ -1,6 +1,5 @@
-use std::simd::{cmp::SimdPartialEq, LaneCount, Simd, SimdElement, SupportedLaneCount};
+use std::simd::{num::SimdFloat, LaneCount, Simd, SupportedLaneCount};
 
-use crate::Vert4;
 pub trait SortaEq<Rhs = Self> {
     fn ehh_maybe(&self, rhs: &Rhs) -> bool;
 }
@@ -22,6 +21,6 @@ where
     LaneCount<N>: SupportedLaneCount,
 {
     fn ehh_maybe(&self, rhs: &Self) -> bool {
-        SortaEq::ehh_maybe(self.as_array(), rhs.as_array())
+        Simd::lt(&SimdFloat::abs(self - rhs), &Simd::splat(1e-4))
     }
 }
