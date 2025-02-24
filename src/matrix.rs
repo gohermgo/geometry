@@ -12,7 +12,6 @@ pub use ops::{Cofactor, Determinant, Minor, Submatrix, Inverse};
 #[const_trait]
 pub trait Matrix<const DIM: usize> {
     type Vert;
-    fn new(array: [f32; DIM * DIM]) -> Self;
     fn identity() -> Self;
     fn transpose(&self) -> Self;
 }
@@ -34,11 +33,9 @@ pub trait AsColumns<const N: usize>: Matrix<N> {
     }
 
 }
-#[const_trait]
 pub trait FromArray<T, const N: usize> {
     fn from_array(array: [T; N]) -> Self;
 }
-#[const_trait]
 pub trait AsArray<T, const N: usize> {
     fn as_array(&self) -> &[T; N];
 }
@@ -59,19 +56,19 @@ pub trait FromSlice<T> {
 
 #[derive(Debug, PartialEq)]
 pub struct Matr2(pub(crate) f32x4);
-impl const FromArray<f32, 4> for Matr2 {
+impl FromArray<f32, 4> for Matr2 {
     #[inline]
     fn from_array(array: [f32; 4]) -> Self {
         Matr2(f32x4::from_array(array))
     }
 }
-impl const AsArray<f32, 4> for Matr2 {
+impl AsArray<f32, 4> for Matr2 {
     #[inline]
     fn as_array(&self) -> &[f32; 4] {
         self.0.as_array()
     }
 }
-impl const FromSlice<f32> for Matr2 {
+impl FromSlice<f32> for Matr2 {
     #[inline]
     fn from_slice(slice: &[f32]) -> Self {
         Matr2(f32x4::from_slice(slice))
@@ -80,10 +77,7 @@ impl const FromSlice<f32> for Matr2 {
 pub(crate) const T_SWIZZLE_2: [usize; 4] = [0, 2, 1, 3];
 impl Matrix<2> for Matr2 {
     type Vert = Vert2;
-    #[inline]
-    fn new(array: [f32; 2 * 2]) -> Self {
-        Matr2::from_array(array)
-    }
+    
     #[inline]
     fn identity() -> Self {
         Matr2::from_array([1.0, 0.0, 0.0, 1.0])
@@ -141,7 +135,7 @@ impl From<&Matr2> for [Vert2; 2] {
 }
 #[derive(Debug, PartialEq)]
 pub struct Matr3([f32; 9]);
-impl const FromArray<f32, 9> for Matr3 {
+impl FromArray<f32, 9> for Matr3 {
 
     #[inline]
     fn from_array(array: [f32; 9]) -> Matr3 {
@@ -173,17 +167,13 @@ impl Matr3 {
         }
     }
 }
-impl const AsArray<f32, 9> for Matr3 {
+impl  AsArray<f32, 9> for Matr3 {
     fn as_array(&self) -> &[f32; 9] {
         &self.0
     }
 }
-impl const Matrix<3> for Matr3 {
+impl  Matrix<3> for Matr3 {
     type Vert = Vert3;
-    #[inline]
-    fn new(array: [f32; 3 * 3]) -> Self {
-        Matr3::from_array(array)
-    }
     #[inline]
     fn identity() -> Self {
         Self::from_array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
@@ -221,7 +211,7 @@ impl Index<(usize, usize)> for Matr3 {
         self.const_index(index)
     }
 }
-impl const FromArray<Vert3, 3> for Matr3 {
+impl  FromArray<Vert3, 3> for Matr3 {
     #[inline]
     fn from_array(arr: [Vert3; 3]) -> Self {
         let mut out_arr = [0.; 9];
@@ -399,12 +389,12 @@ impl<Ax: Axis> ShearingProportion<Ax> {
 }
 #[derive(Debug)]
 pub struct Matr4(f32x16);
-impl const AsArray<f32, 16> for Matr4 {
+impl AsArray<f32, 16> for Matr4 {
     fn as_array(&self) -> &[f32; 16] {
         self.0.as_array()
     }
 }
-impl const FromArray<f32, 16> for Matr4 {
+impl FromArray<f32, 16> for Matr4 {
     #[inline]
     fn from_array(array: [f32; 16]) -> Matr4 {
         Matr4(f32x16::from_array(array))
@@ -562,10 +552,7 @@ impl Matr4 {
 pub(crate) const T_SWIZZLE_4: [usize; 16] = [0, 4, 8, 12, 1, 5, 9, 13, 2, 6, 10, 14, 3, 7, 11, 15];
 impl Matrix<4> for Matr4 {
     type Vert = Vert4;
-    #[inline]
-    fn new(array: [f32; 4 * 4]) -> Self {
-        Self(f32x16::from_array(array))
-    }
+    
     #[inline]
     fn identity() -> Self {
         Self(f32x16::from_array([

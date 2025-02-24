@@ -39,6 +39,18 @@ mod mat2 {
     }
 }
 mod mat3 {
+    mod determinant {
+
+        use geometry::matrix::{Cofactor, Determinant, FromArray, Matr3};
+        #[test]
+        fn calculating_determinant_1() {
+            let a = Matr3::from_array([1.0, 2.0, 6.0, -5.0, 8.0, -4.0, 2.0, 6.0, 4.0]);
+            assert_eq!(a.cofactor(0, 0), 56.0);
+            assert_eq!(a.cofactor(0, 1), 12.0);
+            assert_eq!(a.cofactor(0, 2), -46.0);
+            assert_eq!(a.determinant(), -196.0);
+        }
+    }
     mod cofactor {
         use geometry::matrix::{Cofactor, Minor};
         #[test]
@@ -50,6 +62,15 @@ mod mat3 {
 
             assert_eq!(a.minor(1, 0), 25.0);
             assert_eq!(a.cofactor(1, 0), -25.0);
+        }
+    }
+    mod minor {
+        use geometry::matrix::{Determinant, Minor, Submatrix};
+        #[test]
+        fn calc_minor() {
+            let a = geometry::mat3! {3.0, 5.0, 0.0, 2.0, -1.0, -7.0, 6.0, -1.0, 5.0};
+            let b = a.submatrix(1, 0);
+            assert_eq!(b.determinant(), a.minor(1, 0))
         }
     }
 }
@@ -147,10 +168,9 @@ mod mat4 {
         }
     }
     mod inverse {
-        use geometry::matrix::{AsColumns, Cofactor, Determinant, Inverse, Matrix};
+        use geometry::matrix::{AsColumns, Cofactor, Determinant, Inverse};
         use geometry::Vert4;
 
-        use super::*;
         #[test]
         fn invertible() {
             let a = geometry::mat4! {

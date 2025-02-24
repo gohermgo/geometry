@@ -1,6 +1,4 @@
-#![allow(incomplete_features)]
 #![feature(const_trait_impl, associated_type_defaults)]
-#![feature(generic_const_exprs)]
 #![feature(portable_simd)]
 pub mod matrix;
 pub use matrix::{Cofactor, Determinant, Matr2, Matr3, Matr4, Matrix, Minor, Submatrix};
