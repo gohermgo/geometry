@@ -3,7 +3,7 @@
 #![feature(generic_const_exprs)]
 #![feature(portable_simd)]
 pub mod matrix;
-pub use matrix::{Cofactor, Determinant, Mat2, Mat3, Mat4, Matrix, Minor, Submatrix};
+pub use matrix::{Cofactor, Determinant, Mat2, Mat3, Matr4, Matrix, Minor, Submatrix};
 pub mod cmp;
 pub mod ops;
 #[macro_use]

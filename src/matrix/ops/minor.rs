@@ -1,7 +1,7 @@
 //! Minor operation
 use std::ops::Index;
 
-use crate::{Determinant, Mat2, Mat3, Mat4, Matrix, Submatrix};
+use crate::{Determinant, Mat2, Mat3, Matr4, Matrix, Submatrix};
 
 /// The determinant of the submatrix
 pub trait Minor<const DIM: usize, const SUB: usize>: Matrix<DIM> + Submatrix<DIM, SUB> {
@@ -18,7 +18,7 @@ pub trait Minor<const DIM: usize, const SUB: usize>: Matrix<DIM> + Submatrix<DIM
 
 impl Minor<3, 2> for Mat3 {}
 
-impl Minor<4, 3> for Mat4 {}
+impl Minor<4, 3> for Matr4 {}
 
 // impl<'mat, 'submat> Minor<'mat, 'submat, 3, 2> for Mat3 {
 //     fn minor(&'mat self, row: usize, col: usize) -> f32 {

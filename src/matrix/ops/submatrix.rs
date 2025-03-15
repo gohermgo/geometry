@@ -1,7 +1,7 @@
 //! Submatrix-ing operation
 use std::ops::Index;
 
-use crate::{Mat2, Mat3, Mat4, Matrix};
+use crate::{Mat2, Mat3, Matr4, Matrix};
 
 pub trait Submatrix<const DIM: usize, const SUB: usize>: Matrix<DIM> {
     type SubmatrixOutput;
@@ -50,7 +50,7 @@ impl Submatrix<3, 2> for Mat3 {
     type SubmatrixOutput = Mat2;
 }
 
-impl Submatrix<4, 3> for Mat4 {
+impl Submatrix<4, 3> for Matr4 {
     type SubmatrixOutput = Mat3;
     // #[inline]
     // fn submatrix(&self, omitted_row: usize, omitted_col: usize) -> Self::SubmatrixOutput {
@@ -84,10 +84,10 @@ mod tests {
         }
     }
     mod mat4 {
-        use super::{Mat3, Mat4, Matrix, Submatrix};
+        use super::{Mat3, Matr4, Matrix, Submatrix};
         #[test]
         fn submat() {
-            let a = Mat4::new([
+            let a = Matr4::new([
                 -6.0, 1.0, 1.0, 6.0, -8.0, 5.0, 8.0, 6.0, -1.0, 0.0, 8.0, 2.0, -7.0, 1.0, -1.0, 1.0,
             ]);
             assert_eq!(

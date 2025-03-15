@@ -1,4 +1,4 @@
-use crate::{Cofactor, Mat2, Mat3, Mat4};
+use crate::{Cofactor, Mat2, Mat3, Matr4};
 
 pub trait Determinant {
     fn determinant(&self) -> f32;
@@ -22,7 +22,7 @@ impl Determinant for Mat3 {
         tally
     }
 }
-impl Determinant for Mat4 {
+impl Determinant for Matr4 {
     #[inline]
     fn determinant(&self) -> f32 {
         let mut tally = 0.0;
@@ -61,10 +61,10 @@ mod tests {
     }
 
     mod mat4 {
-        use super::{Cofactor, Determinant, Mat4, Matrix};
+        use super::{Cofactor, Determinant, Matr4, Matrix};
         #[test]
         fn calc_det() {
-            let a = Mat4::new([
+            let a = Matr4::new([
                 -2.0, -8.0, 3.0, 5.0, -3.0, 1.0, 7.0, 3.0, 1.0, 2.0, -9.0, 6.0, -6.0, 7.0, 7.0,
                 -9.0,
             ]);

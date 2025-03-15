@@ -68,6 +68,16 @@ const SIMD_4_Z: Simd<f32, 4> = Simd::from_array([0.0_f32, 0.0_f32, 1.0_f32, 0.0_
 const SIMD_4_W: Simd<f32, 4> = Simd::from_array([0.0_f32, 0.0_f32, 0.0_f32, 1.0_f32]);
 #[derive(Debug)]
 pub struct Vert4(pub(crate) f32x4);
+impl Vert4 {
+    #[inline]
+    pub const fn point(x: f32, y: f32, z: f32) -> Vert4 {
+        Vert4::new(x, y, z, 1.0)
+    }
+    #[inline]
+    pub const fn vector(x: f32, y: f32, z: f32) -> Vert4 {
+        Vert4::new(x, y, z, 0.0)
+    }
+}
 impl Vertex for Vert4 {}
 impl Vert4 {
     pub const ZERO: Self = Self(SIMD_4_ZERO);
@@ -341,19 +351,19 @@ impl Div<&f32> for &Vert4 {
 impl PartialEq for Vert4 {
     #[inline]
     fn eq(&self, other: &Self) -> bool {
-        self.ehh_maybe(&other)
+        self.0.ehh_maybe(&other.0)
     }
 }
 impl PartialEq<Vector> for Vert4 {
     #[inline]
     fn eq(&self, other: &Vector) -> bool {
-        self.ehh_maybe(&other.0)
+        self.0.ehh_maybe(&other.0 .0)
     }
 }
 impl PartialEq<Point> for Vert4 {
     #[inline]
     fn eq(&self, other: &Point) -> bool {
-        self.ehh_maybe(&other.0)
+        self.0.ehh_maybe(&other.0 .0)
     }
 }
 #[cfg(test)]
