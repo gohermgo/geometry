@@ -5,6 +5,8 @@ pub use matrix::{Cofactor, Determinant, Matr2, Matr3, Matr4, Matrix, Minor, Subm
 pub mod macros;
 pub mod vertex;
 pub use vertex::{Cross, Dot, Mag, Norm, Vert2, Vert3, Vert4};
+pub mod quaternion;
+pub use quaternion::Quaternion;
 
 #[macro_export]
 macro_rules! vertex {
