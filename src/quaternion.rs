@@ -1,5 +1,11 @@
 use core::simd::{Simd, SimdElement};
 
+use core::ops::{Add, AddAssign};
+use core::ops::{Mul, MulAssign};
+use core::ops::{Sub, SubAssign};
+
+use crate::Vert3;
+
 #[derive(Debug)]
 pub struct Quaternion<T: SimdElement>(Simd<T, 4>);
 impl<T: SimdElement> From<Simd<T, 4>> for Quaternion<T> {
@@ -10,6 +16,96 @@ impl<T: SimdElement> From<Simd<T, 4>> for Quaternion<T> {
 impl<T: SimdElement> From<[T; 4]> for Quaternion<T> {
     fn from(value: [T; 4]) -> Self {
         Simd::from_array(value).into()
+    }
+}
+impl<T: SimdElement> Add<T> for Quaternion<T>
+where
+    Simd<T, 4>: Add,
+    Quaternion<T>: From<<Simd<T, 4> as Add>::Output>,
+{
+    type Output = Quaternion<T>;
+    fn add(self, rhs: T) -> Self::Output {
+        let rhs = Simd::splat(rhs);
+        let Quaternion(lhs) = self;
+        Simd::add(lhs, rhs).into()
+    }
+}
+impl<T: SimdElement> Add for Quaternion<T>
+where
+    Simd<T, 4>: Add,
+    Quaternion<T>: From<<Simd<T, 4> as Add>::Output>,
+{
+    type Output = Quaternion<T>;
+    fn add(self, Quaternion(rhs): Quaternion<T>) -> Self::Output {
+        let Quaternion(lhs) = self;
+        Simd::add(lhs, rhs).into()
+    }
+}
+impl<T: SimdElement> Sub<T> for Quaternion<T>
+where
+    Simd<T, 4>: Sub,
+    Quaternion<T>: From<<Simd<T, 4> as Sub>::Output>,
+{
+    type Output = Quaternion<T>;
+    fn sub(self, rhs: T) -> Self::Output {
+        let rhs = Simd::splat(rhs);
+        let Quaternion(lhs) = self;
+        Simd::sub(lhs, rhs).into()
+    }
+}
+impl<T: SimdElement> Sub for Quaternion<T>
+where
+    Simd<T, 4>: Sub,
+    Quaternion<T>: From<<Simd<T, 4> as Sub>::Output>,
+{
+    type Output = Quaternion<T>;
+    fn sub(self, Quaternion(rhs): Quaternion<T>) -> Self::Output {
+        let Quaternion(lhs) = self;
+        Simd::sub(lhs, rhs).into()
+    }
+}
+fn quaternion_vector_component<T: SimdElement>(Quaternion(s): &Quaternion<T>) -> Vert3<T> {
+    Vert3::from(core::array::from_fn(|idx| s[idx + 1].into()))
+}
+// q1q2 = (a1,v1)(a2,v2)
+//      = (a1a2 - v1v2, a1v2 + a2v1 + v1 `cross` v2)
+// Thus, scalar is (a1a2 - v1v2)
+//       vector is (a1v2 + a2v1 + v1 `cross` v2)
+
+// S <- Sa * Sb - Xa * Xb - Ya * Yb - Za * Zb
+// X <- Sa * Xb + Sb * Ya
+impl<T: SimdElement> Mul<T> for Quaternion<T>
+where
+    Simd<T, 4>: Mul,
+    Quaternion<T>: From<<Simd<T, 4> as Mul>::Output>,
+{
+    type Output = Quaternion<T>;
+    fn mul(self, rhs: T) -> Self::Output {
+        let rhs = Simd::splat(rhs);
+        let Quaternion(lhs) = self;
+        Simd::mul(lhs, rhs).into()
+    }
+}
+impl<T: SimdElement + Mul<Output = T> + Add<Output = T> + Sub<Output = T>> Mul for Quaternion<T>
+where
+    Simd<T, 4>: Mul,
+    Quaternion<T>: From<<Simd<T, 4> as Mul>::Output>,
+{
+    type Output = Quaternion<T>;
+    fn mul(self, q2 @ Quaternion(rhs): Quaternion<T>) -> Self::Output {
+        let v1 = quaternion_vector_component(&self);
+        let v2 = quaternion_vector_component(&q2);
+
+        let self_scalar = self.0[0];
+        let rhs_scalar = rhs[0];
+
+        // Scalar = a1a2 - v1v2
+        let scalar = (self_scalar * rhs_scalar) - crate::Dot::dot(v1, v2);
+
+        // Vector = a1v2 + a2v1 + v1 `cross` v2
+        let vert = (v2 * self_scalar) + (v1 * rhs_scalar) + crate::Cross::cross(v1, v2);
+
+        Simd::from_array([scalar, vert[0], vert[1], vert[2]]).into()
     }
 }
 // TODO:
