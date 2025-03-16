@@ -12,12 +12,23 @@ use core::ops::{Div, DivAssign};
 use core::ops::{Mul, MulAssign};
 use core::ops::{Sub, SubAssign};
 
+use core::iter::Sum;
+
+use num_traits::{ConstOne, ConstZero, Float, Num, Zero};
+
 const SIMD_2_ZERO: Simd<f32, 2> = Simd::from_array([0.0_f32, 0.0_f32]);
 const SIMD_2_X: Simd<f32, 2> = Simd::from_array([1.0_f32, 0.0_f32]);
 const SIMD_2_Y: Simd<f32, 2> = Simd::from_array([0.0_f32, 1.0_f32]);
-
+pub fn almost_eq<T: Float>(lhs: &T, rhs: &T) -> bool {
+    T::from(1e-4)
+        .map(|small_value| (T::max(*lhs, *rhs) - T::min(*lhs, *rhs)) < small_value)
+        .unwrap_or_default()
+}
 pub const fn float_almost_eq(lhs: &f32, rhs: &f32) -> bool {
     (f32::max(*lhs, *rhs) - f32::min(*lhs, *rhs)) < 1e-4
+}
+pub fn array_almost_eq<T: PartialEq + Float, const N: usize>(lhs: &[T; N], rhs: &[T; N]) -> bool {
+    lhs.iter().zip(rhs).all(|(lhs, rhs)| almost_eq(lhs, rhs))
 }
 pub fn float_array_almost_eq<const N: usize>(lhs: &[f32; N], rhs: &[f32; N]) -> bool {
     lhs.iter()
@@ -68,44 +79,85 @@ const SIMD_3_X: [f32; 3] = [1.0_f32, 0.0_f32, 0.0_f32];
 const SIMD_3_Y: [f32; 3] = [0.0_f32, 1.0_f32, 0.0_f32];
 const SIMD_3_Z: [f32; 3] = [0.0_f32, 0.0_f32, 1.0_f32];
 
-#[repr(transparent)]
-pub struct Vert3([f32; 3]);
+#[rustfmt::skip]
+const fn vert_3_const_zero<T: ConstZero>() -> Vert3<T> { Vert3([T::ZERO, T::ZERO, T::ZERO]) }
+#[rustfmt::skip]
+const fn vert_3_const_unit_x<T: ConstOne + ConstZero>() -> Vert3<T> { Vert3([T::ONE, T::ZERO, T::ZERO]) }
+#[rustfmt::skip]
+const fn vert_3_const_unit_y<T: ConstOne + ConstZero>() -> Vert3<T> { Vert3([T::ZERO, T::ONE, T::ZERO]) }
+#[rustfmt::skip]
+const fn vert_3_const_unit_z<T: ConstOne + ConstZero>() -> Vert3<T> { Vert3([T::ZERO, T::ZERO, T::ONE]) }
 
-impl Deref for Vert3 {
-    type Target = [f32];
+#[repr(transparent)]
+#[derive(Clone, Copy)]
+pub struct Vert3<T>([T; 3]);
+
+impl<T> Deref for Vert3<T> {
+    type Target = [T];
     fn deref(&self) -> &Self::Target {
         self.0.as_ref()
     }
 }
-impl Debug for Vert3 {
+impl<T: Debug> Debug for Vert3<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> FmtResult {
         f.debug_tuple("Vert3").field(&self.0).finish()
     }
 }
-impl PartialEq for Vert3 {
-    fn eq(&self, other: &Self) -> bool {
-        float_array_almost_eq(&self.0, &other.0)
+impl<T: Float> PartialEq for Vert3<T> {
+    fn eq(&self, Vert3(other): &Self) -> bool {
+        array_almost_eq(&self.0, other)
     }
 }
-impl Vert3 {
-    pub const ZERO: Self = Self(SIMD_3_ZERO);
-    pub const X: Self = Self(SIMD_3_X);
-    pub const Y: Self = Self(SIMD_3_Y);
-    pub const Z: Self = Self(SIMD_3_Z);
+impl<T: Add<Output = T>> Add for Vert3<T> {
+    type Output = Vert3<T>;
     #[inline]
-    pub const fn new(x: f32, y: f32, z: f32) -> Self {
+    fn add(self, Vert3([a2, b2, c2]): Self) -> Self::Output {
+        let Vert3([a1, b1, c1]) = self;
+        Vert3([a1 + a2, b1 + b2, c1 + c2])
+    }
+}
+impl<T: Zero> Zero for Vert3<T> {
+    #[rustfmt::skip]
+    fn zero() -> Self { Vert3([T::zero(), T::zero(), T::zero()]) }
+    #[rustfmt::skip]
+    fn is_zero(&self) -> bool { self.iter().all(T::is_zero) }
+}
+impl<T: ConstZero> ConstZero for Vert3<T> {
+    const ZERO: Self = vert_3_const_zero();
+}
+impl<T: Mul<Output = T>> Mul for Vert3<T> {
+    type Output = Vert3<T>;
+    fn mul(self, Vert3([x2, y2, z2]): Self) -> Self::Output {
+        let Vert3([x1, y1, z1]) = self;
+        Vert3([x1 * x2, y1 * y2, z1 * z2])
+    }
+}
+impl<T: Mul<Output = T> + Copy> Mul<T> for Vert3<T> {
+    type Output = Vert3<T>;
+    fn mul(self, rhs: T) -> Self::Output {
+        let Vert3([x, y, z]) = self;
+        Vert3([rhs * x, rhs * y, rhs * z])
+    }
+}
+impl<T> Vert3<T> {
+    // pub const ZERO: Self = Self(SIMD_3_ZERO);
+    // pub const X: Self = Self(SIMD_3_X);
+    // pub const Y: Self = Self(SIMD_3_Y);
+    // pub const Z: Self = Self(SIMD_3_Z);
+    #[inline]
+    pub const fn new(x: T, y: T, z: T) -> Self {
         Self([x, y, z])
     }
 }
-impl From<[f32; 3]> for Vert3 {
+impl<T> From<[T; 3]> for Vert3<T> {
     #[inline]
-    fn from(value: [f32; 3]) -> Self {
+    fn from(value: [T; 3]) -> Self {
         Self(value)
     }
 }
-impl From<&[f32; 3]> for Vert3 {
+impl<T: Copy> From<&[T; 3]> for Vert3<T> {
     #[inline]
-    fn from(value: &[f32; 3]) -> Self {
+    fn from(value: &[T; 3]) -> Self {
         Self(*value)
     }
 }
@@ -453,6 +505,16 @@ pub trait Dot<Rhs: ?Sized = Self> {
     type Output;
     fn dot(self, rhs: Rhs) -> Self::Output;
 }
+impl<T: Mul<Output = T> + Add<Output = T>> Dot for Vert3<T> {
+    type Output = T;
+    fn dot(self, Vert3([rhs_x, rhs_y, rhs_z]): Self) -> Self::Output {
+        let Vert3([x, y, z]) = self;
+        // debug_assert!(self.is_vector(), "Dot: Self is not a vector!");
+        // debug_assert!(rhs.is_vector(), "Dot: Rhs is not a vector!")
+        let [x, y, z] = [x * rhs_x, y * rhs_y, z * rhs_z];
+        x + y + z
+    }
+}
 impl Dot for Vert4 {
     type Output = f32;
     fn dot(self, rhs @ Vert4(rhs_simd): Self) -> Self::Output {
@@ -530,9 +592,21 @@ impl NormAssign for f32x4 {
         *self /= f32x4::from_array([self.mag(); 4])
     }
 }
-pub trait Cross<Rhs: ?Sized> {
+pub trait Cross<Rhs: ?Sized = Self> {
     type Output;
     fn cross(self, rhs: Rhs) -> Self::Output;
+}
+impl<T: Mul<Output = T> + Sub<Output = T> + Copy> Cross for Vert3<T> {
+    type Output = Vert3<T>;
+    #[inline]
+    fn cross(self, Vert3([x2, y2, z2]): Self) -> Self::Output {
+        let Vert3([x1, y1, z1]) = self;
+        Vert3([
+            (y1 * z2) - (z1 * y2),
+            (z1 * x2) - (x1 * z2),
+            (x1 * y2) - (y1 * x2),
+        ])
+    }
 }
 pub(crate) const CROSS_SWIZZLE_0: [usize; 4] = [1, 2, 0, 3];
 pub(crate) const CROSS_SWIZZLE_1: [usize; 4] = [2, 0, 1, 3];

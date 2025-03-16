@@ -172,7 +172,7 @@ impl  AsArray<f32, 9> for Matr3 {
     }
 }
 impl  Matrix<3> for Matr3 {
-    type Vert = Vert3;
+    type Vert = Vert3<f32>;
     #[inline]
     fn identity() -> Self {
         Self::from_array([1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0])
@@ -210,9 +210,9 @@ impl Index<(usize, usize)> for Matr3 {
         self.const_index(index)
     }
 }
-impl  FromArray<Vert3, 3> for Matr3 {
+impl  FromArray<Vert3<f32>, 3> for Matr3 {
     #[inline]
-    fn from_array(arr: [Vert3; 3]) -> Self {
+    fn from_array(arr: [Vert3<f32>; 3]) -> Self {
         let mut out_arr = [0.; 9];
         let mut idx = 0;
         while idx <9 {
@@ -228,7 +228,7 @@ impl  FromArray<Vert3, 3> for Matr3 {
         Matr3::from_array(out_arr)
     }
 }
-impl From<Matr3> for [Vert3; 3] {
+impl From<Matr3> for [Vert3<f32>; 3] {
     #[inline]
     fn from(value: Matr3) -> Self {
         let v0 = Vert3::new(value[(0, 0)], value[(0, 1)], value[(0, 2)]);
@@ -237,7 +237,7 @@ impl From<Matr3> for [Vert3; 3] {
         [v0, v1, v2]
     }
 }
-impl From<&Matr3> for [Vert3; 3] {
+impl From<&Matr3> for [Vert3<f32>; 3] {
     #[inline]
     fn from(value: &Matr3) -> Self {
         let v0 = Vert3::new(value[(0, 0)], value[(0, 1)], value[(0, 2)]);
